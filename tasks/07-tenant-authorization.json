@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "07-tenant-authorization",
+  "split": "heldout",
+  "publicPrompt": "Fix `canEdit(user, record)` in `src/authorization.ts`. Access is allowed only within the user's tenant. Within that tenant, administrators and the record owner may edit. All cross-tenant access is denied, including administrators and matching owner IDs. Do not mutate either input.",
+  "fixture": {
+    "directory": "public/07-tenant-authorization",
+    "hash": "24457d27192a841fd58599211ae9280cfc964a36ceda751bb8282c62f1259af5",
+    "files": [
+      { "path": "README.md", "sha256": "baf41df32be698e6ef86c0f8214950c5c282663cbd8f4e9a83ea76914154af1a" },
+      { "path": "package-lock.json", "sha256": "009149181613d7df4a2733a6cae89c524a36c676ab71a4a4348990d8278fa072" },
+      { "path": "package.json", "sha256": "0864cdda5d0e9c3f0ac6f4050bd3cb12d1ae5fd94c92aacb0e0d6257b412cc5b" },
+      { "path": "src/authorization.ts", "sha256": "0bd5ce7a067b01a4edcde4852e9c51897ec03d87975a969fb3c1bf33e63e9e46" },
+      { "path": "test/public.test.mjs", "sha256": "186b0fc2724bea2c8ab4408d050c6c398bf9ffb46c965dabe0e41e3ccbdba96d" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "07-tenant-authorization",
+  "validatorHash": "1b94577b3bb8d58083f0a9d855ff86f07723dcd0e3288c5425cff846f4014f21",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

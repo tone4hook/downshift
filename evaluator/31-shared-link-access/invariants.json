@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "authorization",
+  "mutations": [
+    {
+      "id": "expiry-boundary",
+      "module": "src/links.ts"
+    },
+    {
+      "id": "token-leak",
+      "module": "src/access.ts"
+    },
+    {
+      "id": "wrong-resource",
+      "module": "src/links.ts"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+export function retryDelay(error:any,attempt:number,maxAttempts:number,baseDelay:number){if(!Number.isInteger(maxAttempts)||maxAttempts<1||!Number.isFinite(baseDelay)||baseDelay<0)throw Error('INVALID_RETRY');return error?.retryable===true&&attempt<=maxAttempts?baseDelay*2**(attempt-1):null;}

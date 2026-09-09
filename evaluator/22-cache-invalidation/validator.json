@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "taskId": "22-cache-invalidation",
+  "hiddenChecks": [
+    {
+      "name": "hidden-behavior",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "{evaluator}/hidden.test.mjs"
+      ]
+    },
+    {
+      "name": "hidden-types",
+      "argv": [
+        "node",
+        "--test",
+        "{evaluator}/typing.test.mjs"
+      ]
+    }
+  ],
+  "referenceDirectory": "reference",
+  "incompleteDirectory": "incomplete",
+  "mutantDirectories": [
+    "mutant-stale-after-update",
+    "mutant-failed-write-eviction"
+  ]
+}

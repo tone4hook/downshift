@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "integration regressions",
+  "mutations": [
+    {
+      "id": "parent-path",
+      "module": "src/paths.ts"
+    },
+    {
+      "id": "utf8-budget",
+      "module": "src/archive.ts"
+    },
+    {
+      "id": "duplicate-path",
+      "module": "src/archive.ts"
+    }
+  ]
+}

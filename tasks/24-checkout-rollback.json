@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "24-checkout-rollback",
+  "split": "dev",
+  "publicPrompt": "Fix checkout so line items with the same SKU aggregate before stock validation, reject nonpositive or unsafe quantities with INVALID_QUANTITY, and perform stock updates plus order creation inside one transaction. A failed order write must roll back stock. Return the created order and propagate storage errors. Inputs must not be mutated.",
+  "fixture": {
+    "directory": "public/24-checkout-rollback",
+    "hash": "7a5dd3284c6541a529bca7ef2f24eec042b237514571ae61987cd91051281554",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "aa3dd3db48a8c375e5e33ac886cdfe34e070c1755791bfe71f690ac7046c0970"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "4a26d6cceb16597499a1ad1cf4baebb940a88347f10872a147e26400c014b79e"
+      },
+      {
+        "path": "package.json",
+        "sha256": "aad15c4b9666ab5c9fb13a3d763fbdef2570c4973a12648f00fe2ce4df1e31aa"
+      },
+      {
+        "path": "src/checkout.ts",
+        "sha256": "ecde2035b8d6daf46e5b61e81faef1bf09e77dc04dde414e1769c701f9b7f916"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "2b7032c56dd443daeeb03d7e3e10cc7ecfae7c8e0fb734c78cb6811d6b1a6a1e"
+      },
+      {
+        "path": "src/lines.ts",
+        "sha256": "378ff05dd60814d473793937fea68b58100db94f8951f114454057431fbd9fb6"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "7f65ca9b45c1bb1781084eb59f0f4016de2b9d56591db4fc397cfc8d6b8f1f41"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "24-checkout-rollback",
+  "validatorHash": "cdf01de52fa6d9454afab81091d930cd1d0a4229af2991ae40891bdd6e27b807",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

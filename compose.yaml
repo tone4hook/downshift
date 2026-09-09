@@ -1,0 +1,102 @@
+services:
+  dev:
+    build:
+      context: .
+      target: dev
+    working_dir: /lab
+    volumes:
+      - .:/lab
+      - phase02-node-modules:/lab/node_modules
+      - phase02-cargo-registry:/usr/local/cargo/registry
+      - phase02-cargo-git:/usr/local/cargo/git
+      - phase02-cargo-target:/lab/rust/switchyard-bridge/target
+    environment:
+      HOME: /tmp/lab-home
+      PI_OFFLINE: "1"
+
+  agent:
+    build:
+      context: .
+      target: agent
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      LAB_AUTH_PROFILE: "${LAB_AUTH_PROFILE:-default}"
+      LAB_CONTAINER_ROLE: agent
+      LAB_GID: "${LAB_GID:-10001}"
+      LAB_INVOCATION_ID: "${LAB_INVOCATION_ID:-phase02}"
+      LAB_PROJECT_ID: "${LAB_PROJECT_ID:-phase02}"
+      LAB_UID: "${LAB_UID:-10001}"
+    volumes:
+      - phase02-auth-profile:/pi-profile
+      - phase02-project-state:/project-state
+      - phase02-project-dependencies:/workspace/node_modules
+    tmpfs:
+      - /tmp:mode=1777
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  evaluator:
+    build:
+      context: .
+      target: evaluator
+    read_only: true
+    network_mode: none
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      LAB_CONTAINER_ROLE: evaluator
+      LAB_GID: "${LAB_GID:-10001}"
+      LAB_UID: "${LAB_UID:-10001}"
+    tmpfs:
+      - /tmp:mode=1777
+
+  mock:
+    build:
+      context: .
+      target: mock
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      LAB_CONTAINER_ROLE: mock
+      LAB_GID: "${LAB_GID:-10001}"
+      LAB_UID: "${LAB_UID:-10001}"
+      MOCK_PORT: "8080"
+      MOCK_CREDENTIAL_LIFETIME_MS: "-1"
+    tmpfs:
+      - /tmp:mode=1777
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 1s
+      timeout: 1s
+      retries: 20
+
+volumes:
+  phase02-auth-profile:
+  phase02-project-state:
+  phase02-project-dependencies:
+  phase02-node-modules:
+  phase02-cargo-registry:
+  phase02-cargo-git:
+  phase02-cargo-target:

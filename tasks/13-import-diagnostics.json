@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "13-import-diagnostics",
+  "split": "heldout",
+  "publicPrompt": "Implement `importRows(rows, existingIds)` in `src/import.ts`. Accept trimmed nonempty string IDs and titles up to 80 characters. IDs are case-sensitive and cannot duplicate existing IDs or earlier accepted rows; rejected rows reserve nothing. Return normalized accepted rows and all zero-based errors with alphabetically sorted field keys, without mutation.",
+  "fixture": {
+    "directory": "public/13-import-diagnostics",
+    "hash": "ce36005fdd4130c3e22977653252d74d813562a7945bfd9f8a9735cf708364fd",
+    "files": [
+      { "path": "README.md", "sha256": "d560bbd8bac2cf69fb411e627bae0cc872da97068cdded183a7080f8383fae54" },
+      { "path": "package-lock.json", "sha256": "426dc05006e932c4375bef4cd70fa049a257e491f5450540830e34b6bbc55817" },
+      { "path": "package.json", "sha256": "ea4e3e73544cdfd5b11babdcd6e122c0c9c3381b6cb9ab86188a6818faeb8c24" },
+      { "path": "src/import.ts", "sha256": "8c51448f74871ddc8a8b7d1d831d97c515af1c6294e2c4054e84d65b44da68c3" },
+      { "path": "test/public.test.mjs", "sha256": "53a579ec5f78eb2ac314136a9272ee30101bf9fdfff2457caf9f276814685626" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "13-import-diagnostics",
+  "validatorHash": "fba1877c1892ac9df50c7c68743242606702339f0911de90ce74f0cf2e64d567",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

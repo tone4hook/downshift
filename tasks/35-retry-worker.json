@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "35-retry-worker",
+  "split": "heldout",
+  "publicPrompt": "Fix the delivery worker retry contract. Retry only errors whose retryable field is true, up to maxAttempts total calls (a positive integer). Use injected sleep with delays baseDelay * 2^attemptIndex starting after the first failure. Do not sleep after the final failure or after success. Preserve the last error identity. Record each attempted delivery number starting at 1.",
+  "fixture": {
+    "directory": "public/35-retry-worker",
+    "hash": "5620c51a2619649386ff6b1c411e327678b068c65bc6f5d8d46933b79821642a",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "5248ebe53d3066b944e34cb0c47e916eef0d93eba599f557a8554cbf345acaf7"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "9654847b39aa964be9054fa7bdd87bad0abc94ed682f986dccb9c6d24ea4cdc9"
+      },
+      {
+        "path": "package.json",
+        "sha256": "7220997ae47fcf19a57aded89d77dddc52b0b7c4700104e5d1fd66754993a1ad"
+      },
+      {
+        "path": "src/delivery.ts",
+        "sha256": "abe9a8e65d980336b981109dee24ffaff1bde4371595a43446a42a587a947ff9"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "27fc14f1d78e3fe675867dc0cd3da6ca416181a7d7b4b567949f81d8ee99bb82"
+      },
+      {
+        "path": "src/policy.ts",
+        "sha256": "681d34d48c9d3bc5430c986a2cb475c806eef1c6128fa09a828da3bce4d76e57"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "851b2149bde556be33d65f87d5b4fa7aa9b6dae02e59ba4a23271bcf4ce1046b"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "35-retry-worker",
+  "validatorHash": "91884fb179cca4b359a8205296e12ca895640ac231e3f817a93c529a0f43b538",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

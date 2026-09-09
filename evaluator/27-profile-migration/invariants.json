@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "cli/configuration",
+  "mutations": [
+    {
+      "id": "false-default",
+      "module": "src/migration.ts"
+    },
+    {
+      "id": "unsafe-url",
+      "module": "src/profiles.ts"
+    },
+    {
+      "id": "unsupported-version",
+      "module": "src/migration.ts"
+    }
+  ]
+}

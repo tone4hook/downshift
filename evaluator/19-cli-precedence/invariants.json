@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "category": "cli/configuration",
+  "mutations": [
+    {
+      "id": "precedence",
+      "module": "src/options.ts"
+    },
+    {
+      "id": "port-range",
+      "module": "src/deploy.ts"
+    }
+  ]
+}

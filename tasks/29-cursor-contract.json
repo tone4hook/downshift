@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "29-cursor-contract",
+  "split": "heldout",
+  "publicPrompt": "Fix the cursor pagination client. Preserve opaque nextCursor strings exactly, including \"0\" and spaces; null or undefined means completion. Accumulate items in page order and reject any repeated non-null cursor with CURSOR_LOOP before fetching it again. The initial request uses null. An empty page with a next cursor is not completion.",
+  "fixture": {
+    "directory": "public/29-cursor-contract",
+    "hash": "f66654083f1711628f595ad22d663472eb5f12672461605341ef30b36e4685c7",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "7c0fad388646ad9dec1a47d9c06d82a1df3a2cd13503f280a7651881658e3d55"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "db0be184def09e625b1e2efba7e31c38d3795316a5f5bd5e235f96f3ef34ace5"
+      },
+      {
+        "path": "package.json",
+        "sha256": "8266e560f9c69deee31089dcb3075078d426dcb9f05eaa37c802ff6846317db8"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "0149810d82235208a168e881aee8a56488ee4e7926e335b3e4f69fc122d44892"
+      },
+      {
+        "path": "src/page.ts",
+        "sha256": "4168fda67e80f947c58c6063ed7641fd7903a902d8f6ac068322c480816317d8"
+      },
+      {
+        "path": "src/pagination.ts",
+        "sha256": "7499a567eea883f99c5e51ed595710b77fffef451e9f396f6f221eb2a43dd79b"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "8099b406e0ac7bed2e0b37a982f616dac7086424c4f68ce8641d562a4bcc7e9e"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "29-cursor-contract",
+  "validatorHash": "66768e1b0e3bdd90467391b7ac6c97d7de7b581fdc891ac9ad8a2b4a225af29f",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

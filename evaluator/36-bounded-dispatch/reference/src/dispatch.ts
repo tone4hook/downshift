@@ -1,0 +1,2 @@
+import { validateConcurrency } from './limits.ts';
+export async function dispatch(items:any[],run:any,concurrency:number){validateConcurrency(concurrency);const results:any[]=new Array(items.length);let next=0;async function worker(){for(;;){const index=next++;if(index>=items.length)return;try{results[index]={status:'fulfilled',value:await run(items[index])};}catch(reason){results[index]={status:'rejected',reason};}}}await Promise.all(Array.from({length:Math.min(concurrency,items.length)},()=>worker()));return results;}

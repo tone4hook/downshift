@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "17-subscription-lifecycle",
+  "split": "heldout",
+  "publicPrompt": "Implement `createStore(initial)` in `src/store.ts`. Subscribe does not notify immediately; every call is distinct and returns idempotent unsubscribe. Every set notifies each active subscription once. Snapshot listeners per dispatch, queue reentrant sets FIFO, then propagate the first listener error after all queued notifications.",
+  "fixture": {
+    "directory": "public/17-subscription-lifecycle",
+    "hash": "20628f2d06195fd61a8d288b6b6920f7fcf557a60c223b527eb9dc9d0cd7e7d6",
+    "files": [
+      { "path": "README.md", "sha256": "747e2cb5765b2c073182096d686d46e98b66149d6c258beb9c243e0db6cf5f04" },
+      { "path": "package-lock.json", "sha256": "3c9f3fd9554876b9ed786d4d02587ed50255c1c31651f55e5d4394624be39853" },
+      { "path": "package.json", "sha256": "ba9076782e784c35ce1e2b0859daebae60a2ea2f5ee590e77cbcc51fa16d7971" },
+      { "path": "src/store.ts", "sha256": "50d875e8f928799fb6a9d6645ef35a52010822d418ba462119d11c4f790e00de" },
+      { "path": "test/public.test.mjs", "sha256": "8a311b9aa0afbe9775e3336287b0c8d702bb8b02dd4eff1a532c3333476305ef" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "17-subscription-lifecycle",
+  "validatorHash": "622c9acec8e460d51f2e25d146e857e1179639d2ac246fea3929cbbd8b1c3fa1",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

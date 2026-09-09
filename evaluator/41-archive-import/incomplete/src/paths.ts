@@ -1,0 +1,1 @@
+export function validArchivePath(path:string){return typeof path==='string'&&path.length>0&&!path.startsWith('/')&&!path.includes('\\')&&!path.includes(':')&&!/[\x00-\x1f]/.test(path)&&path.split('/').every(p=>p!==''&&p!=='.');}

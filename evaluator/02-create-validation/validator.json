@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "taskId": "02-create-validation",
+  "hiddenChecks": [
+    {
+      "name": "hidden-behavior",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "{evaluator}/hidden.test.mjs"
+      ]
+    }
+  ],
+  "referenceDirectory": "reference",
+  "incompleteDirectory": "incomplete"
+}

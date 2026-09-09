@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "22-cache-invalidation",
+  "split": "dev",
+  "publicPrompt": "The user service caches lookups by tenant and user ID. Fix tenant isolation and invalidate only that user after a successful write. Failed writes must preserve cached data. Cache undefined as a legitimate result and do not expose mutable cache storage. Preserve createCache and createUserService interfaces.",
+  "fixture": {
+    "directory": "public/22-cache-invalidation",
+    "hash": "af8205fd6aa0bdc98a278e787b87abe147d28803c30e9e91e3125b1af084c065",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "aaf7cc2192f5f45cc45601b746c27d62df1bae5a61ec94947a687969eb00eeb2"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "363ef9123f4faa300f3ae82b1ea194588119e8e0227d52d0a9c1b77a4531a2fc"
+      },
+      {
+        "path": "package.json",
+        "sha256": "a66fc6e51f0a7a9ca9c4717380da945b03da72c44094c7b8f6cecc8a104cd327"
+      },
+      {
+        "path": "src/cache.ts",
+        "sha256": "4fc355396d0a78e3994be6117b883f426e5ac95bfe533a348d616267fce18b1f"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "b64da1f4583358d3b66f69ee47930a4c2123e58bde206bb05c32bdca75635d42"
+      },
+      {
+        "path": "src/service.ts",
+        "sha256": "316cbccbfbde991840abfc6d8f2b0c6e1b3e17d9da131bbaaddc00b11b9b0db7"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "68ee6baf013b506bbf3121108c92dd7ff237802fd71842545a03b54413084299"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "22-cache-invalidation",
+  "validatorHash": "757478b41668024cd8aa3a6a17fa036b90d9e2c5aa6ea78123854dcaa42ee117",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

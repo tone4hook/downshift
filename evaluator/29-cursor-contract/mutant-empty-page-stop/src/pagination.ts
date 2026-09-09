@@ -1,0 +1,2 @@
+import { decodePage } from './page.ts';
+export async function fetchAll(fetchPage:any) {const items:any[]=[];const seen=new Set<string>();let cursor:string|null=null;for(;;){const page=decodePage(await fetchPage(cursor));items.push(...page.items);if(page.nextCursor===null||page.items.length===0)return items;if(seen.has(page.nextCursor))throw Error('CURSOR_LOOP');seen.add(page.nextCursor);cursor=page.nextCursor;}}

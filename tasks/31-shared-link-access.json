@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "31-shared-link-access",
+  "split": "heldout",
+  "publicPrompt": "Repair shared link access checks. Reject revoked links and links whose expiresAt is <= the supplied clock. Links grant only their listed resourceId and never expose internalToken. Resolve the link before loading the resource; invalid links must not read resources. Missing resources return NOT_FOUND. All checks use the injected clock, not wall time.",
+  "fixture": {
+    "directory": "public/31-shared-link-access",
+    "hash": "2cc3d5046b725b0901bf88677e07915658d7bd33963c9173405599ecb82b511c",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "fd65fa83f9064c40c56b773e9bd065b0600391aded47b8cee7ec1063f2702766"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "1484dd3830976d415bd7e63b9dba3d2cc397c806e341239833ce3dbb33a3fac7"
+      },
+      {
+        "path": "package.json",
+        "sha256": "08ca87e7ae5d9a737cd2c5f46c4fe4404cb91ee0146337e954e17ca9c4107360"
+      },
+      {
+        "path": "src/access.ts",
+        "sha256": "d4dccb0816c78b71919c78919e96abd5c491b22f280bd4ea3e6c529d0da4b23f"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "38dfeefdf0bd89a732fd21c382a29af211bb4ecf562a8222511ce5c7e588e7e8"
+      },
+      {
+        "path": "src/links.ts",
+        "sha256": "73ac80bf72884fbf385c7db6177ae2a46adc58b824cba272634b452f27dcb84f"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "207c1256dacb17ff768aaa0923f31a5d24d04b2106cbe737f1767a5533aab147"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "31-shared-link-access",
+  "validatorHash": "21fc32bae84406466e9422e17148a54032a418186a9ae9a9b5b03be4df5c0e61",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

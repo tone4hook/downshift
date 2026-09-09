@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "34-cache-refresh-race",
+  "split": "heldout",
+  "publicPrompt": "Fix refresh races in the settings store. Every refresh returns its own loaded result, but only the most recently started refresh may update cached state. Keys are independent. A failed latest refresh leaves the last committed value unchanged; an older pending refresh must not overwrite it later. Manual set invalidates all older refreshes for that key.",
+  "fixture": {
+    "directory": "public/34-cache-refresh-race",
+    "hash": "a708d57000015502cd5bc74a1da76f26cb12e3183f6fa28716778b7f81f9aeba",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "e361e1e3d1e34e1c029c2b8403685941e3bf3c48d7f6631c4e8716e08b26b1a9"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "ba2c242ffefd2d368182a6a07263ce647f6165a77cab01c940df9e8a6a85e63f"
+      },
+      {
+        "path": "package.json",
+        "sha256": "d1d5e5c370f4183a957127db6d70e08ad586d4f6036779fa42385c863647a0b8"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "7b25e80ce612dcadad2179f79c92ff696c555ec7d288bda38e430bb6e1cd4c51"
+      },
+      {
+        "path": "src/settings.ts",
+        "sha256": "c119b3f2f33c49b7e362160f0861f254780d06570fcb59d46a174c9319367d47"
+      },
+      {
+        "path": "src/versions.ts",
+        "sha256": "0b7e6a854e6202606f4b1c32df25f22df38161b0f220a093292c83e865b43052"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "9685105b37677fa911d45b8ab793e9c76d1f47e6076e14dfd3e643c58997e98d"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "34-cache-refresh-race",
+  "validatorHash": "1a3c6a687074f43186250131ba65acb0890307f0ccdda4e163315064ee0b17a9",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

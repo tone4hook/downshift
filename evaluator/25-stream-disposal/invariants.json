@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "category": "resource lifecycle",
+  "mutations": [
+    {
+      "id": "pending-next",
+      "module": "src/queue.ts"
+    },
+    {
+      "id": "double-unsubscribe",
+      "module": "src/stream.ts"
+    }
+  ]
+}

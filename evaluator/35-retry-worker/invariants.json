@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "asynchronous workers",
+  "mutations": [
+    {
+      "id": "off-by-one",
+      "module": "src/policy.ts"
+    },
+    {
+      "id": "missing-backoff",
+      "module": "src/delivery.ts"
+    },
+    {
+      "id": "permanent-retry",
+      "module": "src/policy.ts"
+    }
+  ]
+}

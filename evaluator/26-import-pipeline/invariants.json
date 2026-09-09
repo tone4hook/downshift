@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "integration regressions",
+  "mutations": [
+    {
+      "id": "line-number",
+      "module": "src/parser.ts"
+    },
+    {
+      "id": "partial-save",
+      "module": "src/importer.ts"
+    },
+    {
+      "id": "duplicate-sku",
+      "module": "src/parser.ts"
+    }
+  ]
+}

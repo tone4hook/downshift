@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "transactions",
+  "mutations": [
+    {
+      "id": "duplicate-lines",
+      "module": "src/lines.ts"
+    },
+    {
+      "id": "outside-transaction",
+      "module": "src/checkout.ts"
+    },
+    {
+      "id": "accumulated-overflow",
+      "module": "src/lines.ts"
+    }
+  ]
+}

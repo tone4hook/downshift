@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "18-service-pagination",
+  "split": "heldout",
+  "publicPrompt": "Implement `createItemService(repo).listItems(request, user)` in `src/items.ts`. Parse optional string page fields with defaults 1/20, strict positive decimal integers, pageSize <= 100, and optional active/archived status; invalid input throws `INVALID_QUERY`. Filter tenant, status, and trimmed case-insensitive text before count and pagination, sort IDs by code-point order, omit tenantId, and do not mutate.",
+  "fixture": {
+    "directory": "public/18-service-pagination",
+    "hash": "e702c2729470965b16d5312ade5daa5823565467a79eb7b97e8632bc0f762f25",
+    "files": [
+      { "path": "README.md", "sha256": "4488ad2d78620c79aa3d0cd6f5b03892e57623fdfa07d3806e1ae3d66a0f36a4" },
+      { "path": "package-lock.json", "sha256": "7a1b1e59befd40b63cd734d80bb48c8a5cdcf2f7dffa9739c2fa219c80a6e5c0" },
+      { "path": "package.json", "sha256": "a66a003fcbd6999de00df3914c40e0e7b970b9b7cf6415660ffe39668d60c80b" },
+      { "path": "src/items.ts", "sha256": "dfca30d94160b11f12a13e85a1a5b50a98fcb33f3d03776537dd9bf63203cc5f" },
+      { "path": "test/public.test.mjs", "sha256": "9fdbe0cdb9c56ab002b0b6eb8620f5f3273f94e86212e42e362c437b95599fdb" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "18-service-pagination",
+  "validatorHash": "14c1159ac147cd9cce1b7e6647ea8dcc73e3c66a8d01be93407be73f0f426ddf",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

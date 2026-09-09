@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "transactions",
+  "mutations": [
+    {
+      "id": "private-event-fields",
+      "module": "src/event.ts"
+    },
+    {
+      "id": "outside-outbox",
+      "module": "src/rename.ts"
+    },
+    {
+      "id": "unchanged-write",
+      "module": "src/rename.ts"
+    }
+  ]
+}

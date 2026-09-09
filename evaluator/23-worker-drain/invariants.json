@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "asynchronous workers",
+  "mutations": [
+    {
+      "id": "rejection-leak",
+      "module": "src/active.ts"
+    },
+    {
+      "id": "early-shutdown",
+      "module": "src/worker.ts"
+    },
+    {
+      "id": "late-enqueue",
+      "module": "src/worker.ts"
+    }
+  ]
+}

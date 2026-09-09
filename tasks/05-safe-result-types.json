@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "05-safe-result-types",
+  "split": "dev",
+  "publicPrompt": "Repair the unsafe generic mapping in `src/result.ts`. Export `Result<T> = { ok: true; value: T } | { ok: false; error: string }` and `mapResult<A, B>(result: Result<A>, mapper: (value: A) => B): Result<B>`. Successful values are mapped with inferred output type B. Error variants preserve their error without calling the mapper. Do not mutate inputs, let mapper exceptions propagate, and keep invalid mapper argument types rejected by strict TypeScript checking without using any or unchecked casts.",
+  "fixture": {
+    "directory": "public/05-safe-result-types",
+    "hash": "badc497eab6a00893c55d1f28617690200db0f5788d1f171a3c40154ab31f777",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "be60031fded6f62616a0b1da55b9c678211da9e6ca475c778e3caa23a618886d"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "f0f488d17b1b6b4cdba42cdcce9a147007af7ae77e184eed6e7ed757bc0c2953"
+      },
+      {
+        "path": "package.json",
+        "sha256": "318cd31375a6110b1b433c1358072a8e46d0363ce04f0e7cdbabf81576f213c2"
+      },
+      {
+        "path": "src/result.ts",
+        "sha256": "0ed66cfbb0e0536fe8d43344eb1925df683733cfd87f5fbc8d1bf45e52b253ad"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "213ffb9167ff1de3d43546881c253bfd3214eeb2da64d7b76071059dab8ed663"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"]
+    }
+  ],
+  "evaluatorReferenceId": "05-safe-result-types",
+  "validatorHash": "e78db343314853fe2b426a5eb13b9dcde2343d463ba810537020cbadb91a54a5",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

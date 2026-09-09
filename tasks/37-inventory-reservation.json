@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "37-inventory-reservation",
+  "split": "heldout",
+  "publicPrompt": "Fix reservation idempotency and atomicity. A repeated requestId with identical SKU and quantity returns the prior reservation without charging inventory again. Reusing the ID with different input throws IDEMPOTENCY_CONFLICT. Positive safe-integer quantities only. Within one transaction, check the request, check stock, decrement it, and store the reservation; failed storage rolls back all changes.",
+  "fixture": {
+    "directory": "public/37-inventory-reservation",
+    "hash": "3123f624a6e373431c01f3a81a783821302b3e5405782a30b449833e7643f1e7",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "75eef7e7e2f1b09cc89d168a3dbf828398eba50c7d7f1528430781962a6de9c6"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "f9a95be7ac574a546445c68d1f08ec1b95fd17c6cdc6009d3b3e6c1b7db4bd4d"
+      },
+      {
+        "path": "package.json",
+        "sha256": "ef0dc178a198d3c2d487a34006b8ddf0f57600d2b389f1ee46b5cdb36b820346"
+      },
+      {
+        "path": "src/identity.ts",
+        "sha256": "5086589175031e97316db0f88467f21d7e223d6c4451d039ae3afd8cf1d15b6b"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "3d370b62eef194327929dce21437877c260696fb5a0d0d1631bee7d10ec32769"
+      },
+      {
+        "path": "src/reserve.ts",
+        "sha256": "6164e94f7a403756cf4437d7ddf3a43af1750cb79075435365d66f681ecdf353"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "d7101390f882f5443c14eba7eb210d74c41659b4f8043d1752b278ae03ee287a"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "37-inventory-reservation",
+  "validatorHash": "556956aa7738a986a07ef7b3108d0c40f0fcea5856ec085e2f088a8ab541b790",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

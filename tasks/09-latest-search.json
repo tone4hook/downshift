@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "09-latest-search",
+  "split": "heldout",
+  "publicPrompt": "Fix `createSearchController(fetchResults, publish).search(query)` in `src/search.ts`. Only the latest started request may publish. Latest success publishes results with no error; latest failure publishes empty results and its error message. Stale successes and failures publish nothing, and every search promise resolves after processing.",
+  "fixture": {
+    "directory": "public/09-latest-search",
+    "hash": "12705c94e1f0a8e02006cb570d1c5115e6c91d5094d038a3363617b343d60505",
+    "files": [
+      { "path": "README.md", "sha256": "f48a1d921b9112a83d99d46db02f7b649b410e459f96a9e86233471b026e7041" },
+      { "path": "package-lock.json", "sha256": "6f13d636886f71b523fe34558496da356a38097ca734113de6f1bc8762d27e79" },
+      { "path": "package.json", "sha256": "94460c54abe689da6828b3efa0de20d49f7b521e79e55aa6a4080958d513e022" },
+      { "path": "src/search.ts", "sha256": "52b5dee57332deef1ca400aa2cd0051709c2894e9cf8c213d197ec192e07f9b7" },
+      { "path": "test/public.test.mjs", "sha256": "44badb961dc9bafcca46df236bf5705401b7ebb191f4ed16f8883ebb74e35942" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "09-latest-search",
+  "validatorHash": "74d8071af4f36a289ccf45e2a266f8c8678e4518f2ca4e102ad4b1c2e728c710",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "asynchronous workers",
+  "mutations": [
+    {
+      "id": "fractional-limit",
+      "module": "src/limits.ts"
+    },
+    {
+      "id": "unbounded-jobs",
+      "module": "src/dispatch.ts"
+    },
+    {
+      "id": "completion-order",
+      "module": "src/dispatch.ts"
+    }
+  ]
+}

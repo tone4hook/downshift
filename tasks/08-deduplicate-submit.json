@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "08-deduplicate-submit",
+  "split": "heldout",
+  "publicPrompt": "Implement `createSubmitter(save)` in `src/submitter.ts`. Concurrent submissions with the same key share the exact pending promise and one save; the first pending value wins. Different keys remain independent. Success or rejection releases the key so a later call starts new work.",
+  "fixture": {
+    "directory": "public/08-deduplicate-submit",
+    "hash": "d441e7aca102d5e6fee3d08df18d7a27415ca39479cb192f76144f69c396b1a1",
+    "files": [
+      { "path": "README.md", "sha256": "b6c04bd12c7eed9864da252238ccde1aa0a2a1a66f1933ec448240434ffe0d8d" },
+      { "path": "package-lock.json", "sha256": "1705d75e15f72cb86795130152f38d76a02858ad89283247135613c1dc79e592" },
+      { "path": "package.json", "sha256": "ac504a178da31cca8ab7034af698ff296dc3d4912d462d0323da94764c11e902" },
+      { "path": "src/submitter.ts", "sha256": "0c9caa878ad82b6662227c0972bd212c0b578e26f519378db4f9e784b4258f49" },
+      { "path": "test/public.test.mjs", "sha256": "f40acc32e40e2a7e122bc7460976947352d60af836659c19845f6fb15efbb4ae" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "08-deduplicate-submit",
+  "validatorHash": "da24e4776b40ed757f43f2f4388764f0a7de5eaef4888af20aa17499e9a27cfa",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

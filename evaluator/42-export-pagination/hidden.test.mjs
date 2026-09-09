@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {pathToFileURL} from 'node:url';
+const api=await import(pathToFileURL(process.cwd()+'/src/index.ts').href);
+test('stable exclusive pagination, tenant filtering, and projection',()=>{const rows=Object.freeze([{id:'b',updatedAt:2,tenantId:'t',value:2,secret:'s'},{id:'z',updatedAt:0,tenantId:'other',value:0},{id:'a',updatedAt:2,tenantId:'t',value:1},{id:'c',updatedAt:3,tenantId:'t',value:3}].map(Object.freeze));assert.equal(api.exportPage(rows,{tenantId:'t',since:0,limit:20}).items.length,3);const first=api.exportPage(rows,{tenantId:'t',since:1,limit:2});assert.deepEqual(first,{items:[{id:'a',value:1,updatedAt:2},{id:'b',value:2,updatedAt:2}],nextCursor:{id:'b',updatedAt:2}});assert.deepEqual(api.exportPage(rows,{tenantId:'t',limit:2,cursor:first.nextCursor}),{items:[{id:'c',value:3,updatedAt:3}],nextCursor:null});assert.equal(rows[0].id,'b');});
+test('exact full last page has no next cursor and limits validate',()=>{assert.equal(api.exportPage([{id:'a',tenantId:'t',updatedAt:1,value:1}],{tenantId:'t',limit:1}).nextCursor,null);for(const limit of [0,101,1.5])assert.throws(()=>api.exportPage([],{tenantId:'t',limit}),/INVALID_LIMIT/);});

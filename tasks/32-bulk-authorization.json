@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "32-bulk-authorization",
+  "split": "heldout",
+  "publicPrompt": "Fix bulk deletion of tenant records. Deduplicate requested IDs in first-seen order; load and authorize the entire set before deleting anything. Missing records yield NOT_FOUND. Tenant mismatch or non-owner access by non-admins yields FORBIDDEN. Administrators remain tenant-scoped. Empty requests return zero without calling storage. Delete once with the deduplicated IDs.",
+  "fixture": {
+    "directory": "public/32-bulk-authorization",
+    "hash": "a2d7f658bfdd75a84757a7795bd2f369ba2523334d750e860aa20e0655618626",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "aaa667d504eb287fb115d05b7b29aa353568b0c45b301079ff5ecb6714382811"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "83546638dea9ab3a41bb0096e4b7e08adf3452b3849f6eaf32657a808a81fe80"
+      },
+      {
+        "path": "package.json",
+        "sha256": "83274e6ff1b5f2e9a3f07431f34a49db6a18027f3baa058693a6c4c4d93de9d5"
+      },
+      {
+        "path": "src/authorize.ts",
+        "sha256": "f4ea2169c7cffc2cdc3ac13d8aaeaa3e2b2d06de3b759b842f61e894156761bd"
+      },
+      {
+        "path": "src/bulk.ts",
+        "sha256": "22796b040e9dc6c1054d5d1e0857c05e5635dc1a011b5613d61a9f34cac6f9ed"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "e5add81d81e22e5a38ad979acd4b9088210451241ae3837dbfa0d86a757ecc7a"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "bc9ad26616aa5e163f938643efb10eea6478dbf4ab11054e59070899b915a531"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "32-bulk-authorization",
+  "validatorHash": "684fd828d2503dc8a917335144d47d9a45b874afdfd36469881ac7335f1933f2",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

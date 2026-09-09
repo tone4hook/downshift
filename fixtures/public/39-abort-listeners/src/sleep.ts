@@ -1,0 +1,2 @@
+import { attachAbort } from './abort.ts';
+export function sleepWithSignal(schedule:any,cancel:any,signal:any){return new Promise<void>((resolve,reject)=>{if(signal.aborted){reject(signal.reason);return;}let settled=false;let detach=()=>{};let timer:any;const finish=(aborted:boolean,reason?:any)=>{if(settled)return;settled=true;if(aborted){cancel(timer);reject(reason);}else resolve();};timer=schedule(()=>finish(false));detach=attachAbort(signal,(reason:any)=>finish(true,reason));});}

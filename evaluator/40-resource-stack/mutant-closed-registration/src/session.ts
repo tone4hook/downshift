@@ -1,0 +1,2 @@
+import { createResourceStack } from './stack.ts';
+export async function setupSession(acquire:any,initialize:any){const stack=createResourceStack();try{const resource=await acquire();stack.use(()=>resource.close());const value=await initialize(resource);return {value,close:stack.dispose};}catch(error){try{await stack.dispose();}catch(cleanup){throw new AggregateError([error,cleanup],'SETUP_AND_CLEANUP_FAILED');}throw error;}}

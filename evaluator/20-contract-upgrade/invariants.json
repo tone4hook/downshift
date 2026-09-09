@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "cross-module APIs",
+  "mutations": [
+    {
+      "id": "v2-envelope",
+      "module": "src/decode.ts"
+    },
+    {
+      "id": "unescaped-id",
+      "module": "src/client.ts"
+    },
+    {
+      "id": "untrimmed-name",
+      "module": "src/decode.ts"
+    }
+  ]
+}

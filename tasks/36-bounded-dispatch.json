@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "36-bounded-dispatch",
+  "split": "heldout",
+  "publicPrompt": "Repair batch dispatch: run no more than concurrency jobs at once, preserve result order, and return an all-settled result for each input. Continue after individual failures. Reject invalid concurrency before starting any job. An empty batch resolves immediately. Preserve dispatch and validateConcurrency APIs.",
+  "fixture": {
+    "directory": "public/36-bounded-dispatch",
+    "hash": "c28ef6220ff2a34b6a34d3571efdf212681076a687cfd0a34205f98bcc11bf7f",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "9c5860e19ddac72b6acf0295e266b8e008c4f96f3ed711117f864f29a7b3b1e2"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "13b4502efb2bb3fc89555acd3a1ebead449d981988d894209d99a86d111aca7e"
+      },
+      {
+        "path": "package.json",
+        "sha256": "788ba07d460a40030424549494bfe857935428fe19490c4cf70c3bdb55e78955"
+      },
+      {
+        "path": "src/dispatch.ts",
+        "sha256": "eecb5119b2ec9cbef7bda2ebf6033ecf0c56bf88f100c442409205ebf61e419e"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "5338eea24bbf318b86bdbe5022a9b9f91fce542a17af22900eab7f6ec3738ee0"
+      },
+      {
+        "path": "src/limits.ts",
+        "sha256": "4c39fbe7e707e929f3e1fbd82598121c0c8a8d41e3da94e6d162507f8a8d3945"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "ed0b6c800a9aca1507b8045235e95dd9a109692ab3a5cc6dbf8a35e995269e7c"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "36-bounded-dispatch",
+  "validatorHash": "e3cbe8e673b67fda1e082543decc9a9cd4b9d6d1f21133528ca3fdcc37b724eb",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

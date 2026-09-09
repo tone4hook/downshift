@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "11-retry-policy",
+  "split": "heldout",
+  "publicPrompt": "Implement `retry(operation, { maxAttempts, delay, shouldRetry })` in `src/retry.ts`. Attempts are one-based and maxAttempts is the total positive-integer limit. Retry only retryable failures while attempts remain, call delay with the failed attempt exactly between attempts, and propagate final operation or delay errors unchanged.",
+  "fixture": {
+    "directory": "public/11-retry-policy",
+    "hash": "f6dabd73900960a571ffcf7970883f76fe131c029c3308a01c696105bd71f613",
+    "files": [
+      { "path": "README.md", "sha256": "bbae75a29db7168ecafca3564a5f5a8a8735533475ebe9c5d4df4e7d8aa19e6c" },
+      { "path": "package-lock.json", "sha256": "35916882c2c4febdaf05c9af856a114493e277723d0fd1ea5a8adad543ec73c6" },
+      { "path": "package.json", "sha256": "815d93cb2f7b22a032b07d698e84d1c1334073d2f2b74a29fda448d4b9b7d3cd" },
+      { "path": "src/retry.ts", "sha256": "c2022a1e8480e17a322fdb2e0c596a74a560ceca374c66d96e3e30f958481981" },
+      { "path": "test/public.test.mjs", "sha256": "f1658096fe7cc00b51f0ae7077e347c06a4ed63cd6167728194427a878cdd87f" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "11-retry-policy",
+  "validatorHash": "8f516a59744e4ad0e96bbfd667aa82b636559250780c767a0d21f7f02e44c0fa",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

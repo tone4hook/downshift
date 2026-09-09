@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "20-contract-upgrade",
+  "split": "dev",
+  "publicPrompt": "Upgrade the account client to read both v1 {id,name} and v2 {account:{id,displayName}} responses. Normalize names to trimmed displayName strings, keep the stable {id,displayName} output, reject missing IDs with INVALID_ACCOUNT, and URL-encode identifiers when calling transport. Fetch must not mutate transport payloads.",
+  "fixture": {
+    "directory": "public/20-contract-upgrade",
+    "hash": "986a1de93340f9bb0bd409182419234cb1bac3e46f67d14edd392f44f98e3892",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "a550fa7d027e7b3cf3ba33731c7ef14606c911a2800a43e1d60477da76f8c04b"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "96caca608d2ab9764508fd0dc3afab1ef8cf0917d8f8d90349d288ffa38ed62e"
+      },
+      {
+        "path": "package.json",
+        "sha256": "83f5edb7ec7555890a3133c0d2f37a4edabddf858d93977c6d14a3cfd28dca72"
+      },
+      {
+        "path": "src/client.ts",
+        "sha256": "f600c10d9b6854def26e446a7f9d871891184d51c554f4b2d9050437126800a9"
+      },
+      {
+        "path": "src/decode.ts",
+        "sha256": "24f1255895c7511f5e4f7d7c4bfa6126ee1a443e7494f09660f2926bb8027558"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "fd5d7ef3f6217067035b9e29057621ae57cab3c17388be84bd85830750d38bbd"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "4e8d6ac035b2c23fc14f56980360a1de27df6b07a60fdeb9b9a1d0c8138b537c"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "20-contract-upgrade",
+  "validatorHash": "be3c7e8ec31243fd5546ad20e393acde9666f3b5be49a7fd877d7363761694da",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

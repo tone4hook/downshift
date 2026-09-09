@@ -1,0 +1,2 @@
+import { compareRecords, afterCursor } from './order.ts';
+export function exportPage(rows:any[],request:any){const {tenantId,since=0,cursor=null,limit=20}=request;if(!Number.isInteger(limit)||limit<1||limit>100)throw Error('INVALID_LIMIT');const matching=rows.filter(row=>row.updatedAt>=since&&afterCursor(row,cursor)).sort(compareRecords);const selected=matching.slice(0,limit);const items=selected.map(({id,value,updatedAt})=>({id,value,updatedAt}));const last=selected.at(-1);return {items,nextCursor:matching.length>limit?{updatedAt:last.updatedAt,id:last.id}:null};}

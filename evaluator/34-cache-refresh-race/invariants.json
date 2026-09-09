@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "caching",
+  "mutations": [
+    {
+      "id": "shared-version",
+      "module": "src/versions.ts"
+    },
+    {
+      "id": "stale-refresh",
+      "module": "src/settings.ts"
+    },
+    {
+      "id": "manual-set-race",
+      "module": "src/settings.ts"
+    }
+  ]
+}

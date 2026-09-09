@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "02-create-validation",
+  "split": "dev",
+  "publicPrompt": "Validate create-item input and return useful field errors without accepting invalid values. Implement `validateCreate(input: unknown): ValidationResult<{ title: string; quantity: number }>` in `src/create.ts`. Trim title and require 1-80 characters, require quantity to be a numeric integer from 1 through 100 without coercion, accumulate errors for both fields, reject invalid nonobjects, and preserve normalized valid output without mutating input.",
+  "fixture": {
+    "directory": "public/02-create-validation",
+    "hash": "c427005644ee383cdac52f6a3ecef7e117e3b49bdcd1fec0add1174d873d1680",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "634dc5b7c394045043f379598b82abd4869b15d0870008ea28e9f53bad29a09e"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "8673130e1700940f705e12cf5c0c69271cc703150f7eb7b1a9d4f9e3b197f190"
+      },
+      {
+        "path": "package.json",
+        "sha256": "c0927946999054ec87b16e2454764031712824d3be5a88cb4806a5ad2d271698"
+      },
+      {
+        "path": "src/create.ts",
+        "sha256": "e95c1d38b096ff00af75c1a50474b56a505baf6fbb17f736e131af4ea059152b"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "57142d05fad2c6c67f88e9143966adacf19ba489e05b5193b8c10e7cf5ffe869"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"]
+    }
+  ],
+  "evaluatorReferenceId": "02-create-validation",
+  "validatorHash": "57052eea9e752810adcf74c8a8d4fa09084793afd89fe379d6387a3b81ed4026",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

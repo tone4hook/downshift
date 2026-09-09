@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "15-cancel-batch",
+  "split": "heldout",
+  "publicPrompt": "Implement `runBatch(tasks, concurrency, signal)` in `src/batch.ts`. Require positive-integer concurrency, bound in-flight tasks, and preserve result order. Abort or first task failure stops new work, waits for running tasks, then rejects with the first terminal cause; abort uses `AbortError`. Remove listeners and start nothing when already aborted.",
+  "fixture": {
+    "directory": "public/15-cancel-batch",
+    "hash": "ff81fa9d2781c1ba7646dc9ebae2def71a38c49540421004345973c7f4f3fb0f",
+    "files": [
+      { "path": "README.md", "sha256": "a7bee3b51d9adbf1e9822b0c9a05273339f311ce406640f33cd2d5da3a6141af" },
+      { "path": "package-lock.json", "sha256": "fef9a7eb2c9dea648f38eb429b6759a02de75f0f2711957088a8dcab89938414" },
+      { "path": "package.json", "sha256": "1edab85014ac92234a24ce3283b4d1128c1cf1f74d6f83f820a06cdbba570981" },
+      { "path": "src/batch.ts", "sha256": "29230bf143fb9928d25ca4ee84242831f19d9e9d6177a37bcde77be8e5281ac7" },
+      { "path": "test/public.test.mjs", "sha256": "a32ca605b846391dcd9f572e941ab208e95d6dce732d5ef7750439b14902c085" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "15-cancel-batch",
+  "validatorHash": "c24e08ac04276e320afbdb96dfdc4ca491ca97758e44d26e85f6d2741cc58669",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

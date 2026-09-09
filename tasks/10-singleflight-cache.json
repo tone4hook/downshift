@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "10-singleflight-cache",
+  "split": "heldout",
+  "publicPrompt": "Implement `createCache(load, now, ttlMs).get(key)` in `src/cache.ts`. Require a positive finite TTL. Coalesce concurrent same-key loads while keeping keys independent. Cache successes only, clear failures, start TTL at fulfillment, and expire when `now() >= expiresAt`. Return cached values through promises.",
+  "fixture": {
+    "directory": "public/10-singleflight-cache",
+    "hash": "81dafcc54c6b8174f3a334ed856d55510e69dfe7bb20b9d0dd7d10bf88fd0b59",
+    "files": [
+      { "path": "README.md", "sha256": "4180de0c694eb71b6d84f52fad7e3df1ebce35286f71c75a6e26a0ed79272d7e" },
+      { "path": "package-lock.json", "sha256": "e5c237e838008f15b8691711be5f74ef71d04a1021ef13acee6b08ea04e1e633" },
+      { "path": "package.json", "sha256": "3683380cdf7051c4de1e895be10ca24232c916de32063f242cc55db1ad0c9baa" },
+      { "path": "src/cache.ts", "sha256": "8ea0091e446e3c44e2419f60dc89240b8753fab2f8cce5a78adcad7774add3af" },
+      { "path": "test/public.test.mjs", "sha256": "b72aab066d064e4c75eddf3dde75c2d518339bfd1eb0448463200a0c92342781" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "10-singleflight-cache",
+  "validatorHash": "357dc6fe5798df8b3d21cf05c9bdcf0b95ff318426ac9ab7c54c3144541fb855",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

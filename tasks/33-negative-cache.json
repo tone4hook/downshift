@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "33-negative-cache",
+  "split": "heldout",
+  "publicPrompt": "Fix directory lookup caching. Cache a successful missing lookup (null) for the supplied TTL just like a found record; never cache exceptions. Expire entries when now >= expiresAt using the injected clock. Each key is independent. Preserve createExpiringCache and createDirectory APIs and reject negative or nonfinite TTL with INVALID_TTL.",
+  "fixture": {
+    "directory": "public/33-negative-cache",
+    "hash": "2fa6ea94567fc8737b265f736647f7fc9e3dcc9c16b3df39c779addb72258b35",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "797e4ecb4add5838c77187f2be44f40606c2ad6af888081ec96dff0b4a15d443"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "9199c5a969adafaf3feaece87a843411e59898d301b5715af16f139b1620a476"
+      },
+      {
+        "path": "package.json",
+        "sha256": "c69143cf335039e12259be165011f198e3a1d2c497477d5c8c62a0d12104df34"
+      },
+      {
+        "path": "src/directory.ts",
+        "sha256": "043417ab00267a6e91d1192c33861d43abba2d7599bed1edcceb4a620d727b3a"
+      },
+      {
+        "path": "src/expiry.ts",
+        "sha256": "3eef34324273381488caf00641b3b19c53275a175204506a45833d1cbf2eac36"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "65674411ef79dd6433212d685afbbbefa5a92e1de1b9e9b746345660788ed786"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "87f3d3c4d79fee219ef22398fc7bdfaa9a4a6ab7850401f6f24fb5ef385a90f4"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "33-negative-cache",
+  "validatorHash": "3f1cfa17cc85d91f80c4ddb64ad831dd7fc4defb7d2a92bf06479bf9ed27a330",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

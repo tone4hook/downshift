@@ -1,0 +1,2 @@
+import { reservationInput } from './identity.ts';
+export async function reserve(repo:any,requestId:string,sku:string,quantity:number){const fingerprint=reservationInput(sku,quantity);return repo.transaction(async(tx:any)=>{const prior=await tx.find(requestId);if(prior){if(prior.fingerprint!==fingerprint)throw Error('IDEMPOTENCY_CONFLICT');return prior;}const stock=await tx.stock(sku);if(stock<quantity)throw Error('OUT_OF_STOCK');await tx.take(sku,quantity);const reservation={requestId,sku,quantity,fingerprint};await repo.insert(reservation);return reservation;});}

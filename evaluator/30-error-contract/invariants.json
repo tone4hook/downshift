@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "cross-module APIs",
+  "mutations": [
+    {
+      "id": "retryable-4xx",
+      "module": "src/errors.ts"
+    },
+    {
+      "id": "204-json",
+      "module": "src/client.ts"
+    },
+    {
+      "id": "error-body-parse",
+      "module": "src/client.ts"
+    }
+  ]
+}

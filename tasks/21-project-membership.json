@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "21-project-membership",
+  "split": "dev",
+  "publicPrompt": "Fix project document reads: only active memberships in the requested project may grant access. Owners and admins can read any document there; members can read published documents only. Enforce authorization before reading document storage, return NOT_FOUND for missing documents after access succeeds, and omit secret from the returned document. Keep source records unchanged.",
+  "fixture": {
+    "directory": "public/21-project-membership",
+    "hash": "8113b77ba66d9a2d7a633708d7c90c7a46d7fcbbec3893fa98243ce0d3064a94",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "fbd3b0d3bcd4afc4b7155087065e66bff5ebafadc1dd6b9f42a5b8c8fb270138"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "794def5d5403126654ef569e041490c5634acd6ce8bff37856c28e46bc05f202"
+      },
+      {
+        "path": "package.json",
+        "sha256": "6b235832ff1f7d344bc370e11a17f0b1816bfbd977c2ff1ce86e542c763fb02c"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "5e3fa57054dbffdf50c2d59babd95b053fef68bb5318b1f35753963061388b7e"
+      },
+      {
+        "path": "src/policy.ts",
+        "sha256": "18c7301dd513ac2f8db2074129c661edffc10458860af58e84083952370802e5"
+      },
+      {
+        "path": "src/service.ts",
+        "sha256": "b25a6c729cc866b2a0eb35c1edd3534accbd9e9be956b69ce3fe198534c1ceb9"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "e6b9c6d34b5cb660b1ecb4541e181e0a11f2e839efaf26eec47da6dfc2510365"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "21-project-membership",
+  "validatorHash": "de4f377dad79ea8fbea4f7f8d926c2d1e345df26c47b4168b3f47529d0c27895",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

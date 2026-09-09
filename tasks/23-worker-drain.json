@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "23-worker-drain",
+  "split": "dev",
+  "publicPrompt": "Make shutdown of the task worker graceful. Enqueue must reject with CLOSED after shutdown begins; shutdown must wait for every already-started task, including rejected tasks, and remain idempotent. Rejected task results must still reject for callers. The worker must report active count accurately and avoid unhandled rejection branches.",
+  "fixture": {
+    "directory": "public/23-worker-drain",
+    "hash": "db6022d5e8160c07a96c4860c2b33f9a36e4d27a5d22e9bc791711261b1b92ed",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "0abe5ab78004324ccf49e4e3481fc7b518dde1f6bfba138da5bd401854d8d2cf"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "66885bd95f6d15d834cb0c2abaaa080e596c69c98cead87c1acf8bfe10f04aef"
+      },
+      {
+        "path": "package.json",
+        "sha256": "807be01d95b519a713c7e0a1a750a732d833ce62e3b9fe4e642215666d5fc3f8"
+      },
+      {
+        "path": "src/active.ts",
+        "sha256": "5c28f3f8373700771587bdd2b77c7355ff826b62e82eb354118dc1cd587c22d9"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "33ec65a54083b5426e94ea7e77db58120123bb5a284e8762513cab475aedcc60"
+      },
+      {
+        "path": "src/worker.ts",
+        "sha256": "9b1bbd3b492d74e3c672b70609a1895df0653766fe6b0b1ab6794a0165924d5a"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "e3045cff1f495d601c504a4790162589c0e7bd2e8ce9a030b0f65d27376537f9"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "23-worker-drain",
+  "validatorHash": "e7ba6ee14897f903f4623ee669d7bc60ddd015e0522f26564a2759989af743c0",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

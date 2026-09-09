@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "taskId": "16-config-precedence",
+  "hiddenChecks": [
+    {
+      "name": "hidden-behavior",
+      "argv": ["node", "--experimental-strip-types", "--test", "{evaluator}/hidden.test.mjs"]
+    }
+  ],
+  "referenceDirectory": "reference",
+  "incompleteDirectory": "incomplete"
+}

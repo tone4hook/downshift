@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "19-cli-precedence",
+  "split": "dev",
+  "publicPrompt": "The deploy CLI combines defaults, a config file, DEPLOY_* environment values, and command flags. Fix precedence (defaults < file < environment < flags), preserve explicit false, and reject non-integer ports outside 1..65535 before invoking deploy. Empty environment values are absent. Keep inputs unchanged and retain the existing planDeploy API.",
+  "fixture": {
+    "directory": "public/19-cli-precedence",
+    "hash": "8020452bd73c5c21bad8f6733d6705169755c56f7e41c68c670fb9919cd627fa",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "4eed243359720912f8fb5a66d8febae51a35a5c76fd10f56ce2d68538b573244"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "7ee506711ec8c948c8b5970c4c5033aba851b3ede1c5418330c4e4e426173d21"
+      },
+      {
+        "path": "package.json",
+        "sha256": "80659df8cd06d575393937cbfc4fdb5c72c802d99af8f6c6218fa8aa60c00b66"
+      },
+      {
+        "path": "src/deploy.ts",
+        "sha256": "37e4f4e6d614cb4a5e9cff18f8def1fa953dedf8a8c142fac9bc0815de81d148"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "3ab117a30575fa61e139d142c266ca3bcdd120fcaa9194086b6fba8476d12661"
+      },
+      {
+        "path": "src/options.ts",
+        "sha256": "b6429b93af5b93547924f02d5cda0345a253833ce83ae0e698263063e01a3410"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "1ec55b52ce2973d2be2c644aeb926b1ac2222b1b3ebe6af03ab1a62860fd31ea"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "19-cli-precedence",
+  "validatorHash": "629913ea2e4de243492ce02d7d9fefcd20bda9537ecf321cf3bcab99649eaab0",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

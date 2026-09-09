@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "41-archive-import",
+  "split": "heldout",
+  "publicPrompt": "Repair archive entry validation and import planning. Accept only relative forward-slash paths without empty, dot, dot-dot, drive, or backslash components; reject links and duplicate paths with INVALID_ARCHIVE. Enforce the total byte budget across all entries, using UTF-8 byte lengths, before any write. Validate the entire archive first; successful import writes entries in input order and returns the count. Preserve source entries.",
+  "fixture": {
+    "directory": "public/41-archive-import",
+    "hash": "ac4c1a35788849ad8461b1fbbd9bd669507ae18d399dc2f27400fab6917f3704",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "2a74ee59f6a444f677199b3c42202d9f96e2b972153b20d1175ddd04b8c1500e"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "7c193bb20ac7d2bda3639e37662702e2d0dd39ba75a70fb5aae500b5e1adfd8a"
+      },
+      {
+        "path": "package.json",
+        "sha256": "2bae32669d2e0768465085d700b990a495bde61ae1ea5f1c45fc6b7f8fa7fa20"
+      },
+      {
+        "path": "src/archive.ts",
+        "sha256": "58e07052e3963efd8a22e5bfe95373ed7d336c61ed8da140c95860e1182255c0"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "7148299e5721d57703d170d03235540eecb924316019a74bf7695d8e363345b9"
+      },
+      {
+        "path": "src/paths.ts",
+        "sha256": "d47c41e44117cd2a35691d934ce823cf19ca2a0be7ed5831bfa6fc33979c476e"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "324d96c102a3d6e29af457708b4cc9e8dd0d4d6c576aa1a18fafaef1119b8092"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "41-archive-import",
+  "validatorHash": "61719da971bad0f7ac7c6bcfcea8e5fdb7aa648020ee80b5465b679492624514",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

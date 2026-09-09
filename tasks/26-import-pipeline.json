@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "26-import-pipeline",
+  "split": "dev",
+  "publicPrompt": "Repair the CSV-like inventory import pipeline. Parse CRLF or LF lines with exactly two comma-separated fields (SKU, positive integer quantity); trim fields and ignore blank lines. Collect all diagnostics using physical 1-based line numbers, reject duplicate SKUs, and make zero storage writes if any line is invalid. Valid rows are saved once in one batch. Keep parseRows and importInventory APIs.",
+  "fixture": {
+    "directory": "public/26-import-pipeline",
+    "hash": "d7dedaff42a74da0ce3b4924623bf000192de5393743a2a279f1debac61d1a77",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "328b547afa6be36399326a8153f78cde035ec0be869301c68587c75526cad9c2"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "7ef64b7b63e928081ceff20b249f0cd18048a134501226b79782dd9eca0db850"
+      },
+      {
+        "path": "package.json",
+        "sha256": "11a2181c60383d2a8316e892650194cf7fa64b2050b961ca6400a140b02c50e7"
+      },
+      {
+        "path": "src/importer.ts",
+        "sha256": "793e2de8675f718562dc008fcb08ea41d5caa7f6731d50104e74da5f6a8e9aac"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "ba64d7c97a6d6671cb9356a18ec31b31ca235cbe0d5758b4ac8f866c56c09257"
+      },
+      {
+        "path": "src/parser.ts",
+        "sha256": "c3803670d470ff188ee5ca66c80644780988c8dcb7c6a2bf087587522c43bf2c"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "9203e0d719998064ac57252110f3fafa4bcc5099b8d5fb3fe82f6bbe2d75a3cb"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "26-import-pipeline",
+  "validatorHash": "f05bf5c1a8324e8d150aee51e6fe7940e2b86d3d281d3be17923b4e38ee1454e",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

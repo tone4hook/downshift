@@ -1,0 +1,1 @@
+export function decodePage(raw:any) {if(!Array.isArray(raw.items))throw Error('INVALID_PAGE');const cursor=raw.nextCursor??null;if(cursor!==null&&typeof cursor!=='string')throw Error('INVALID_PAGE');return {items:[...raw.items],nextCursor:cursor===null?null:cursor.trim()};}

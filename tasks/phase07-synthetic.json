@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "phase07-synthetic",
+  "split": "dev",
+  "publicPrompt": "Update sumPositive so it returns the sum of only positive values while preserving existing behavior.",
+  "fixture": {
+    "directory": "public/phase07-synthetic",
+    "hash": "84f3f61b372dd7d9a753f4fdc8966f8616efbcd1399877025a6cc18223c77e51",
+    "files": [
+      {
+        "path": "package-lock.json",
+        "sha256": "72004a59318e97b150d387a2cce6a0f158b609be7abaa1781ed8877eaf108035"
+      },
+      {
+        "path": "package.json",
+        "sha256": "f04ed1192c4ac4348f7232dac965d2d7902bd23dc2fabb2107ee92204a9b793b"
+      },
+      {
+        "path": "src/sum-positive.ts",
+        "sha256": "5ad95c7b41027d0d2e61e54ae6d6bbd89486b837c1907364580db93fc23c7241"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "d813937f3d36c960c443939961216a9759e04a7d6f9072c05fb60605b2ef2b80"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "phase07-synthetic",
+  "validatorHash": "a4298a94734247c9a08cbd380141bfc9211e054348c08f618e3afeda77461654",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": [
+    "package.json",
+    "package-lock.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 2,
+    "maxFileBytes": 65536
+  }
+}

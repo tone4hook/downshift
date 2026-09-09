@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "14-idempotent-events",
+  "split": "heldout",
+  "publicPrompt": "Implement `applyEvents(initial, events)` in `src/events.ts`. Ignore an already-seen ID before validation. New events require the next exact version, a known increment/decrement type, and positive safe-integer amount; reject unsafe results. Return new state and seenIds without mutation, and make replay stable.",
+  "fixture": {
+    "directory": "public/14-idempotent-events",
+    "hash": "9d164a87c46c36898be56c129f948010c0612270265fb3b192aa13956c6feb4c",
+    "files": [
+      { "path": "README.md", "sha256": "6f52f8186c858f8955df53d6674a70224c759160d6bd0df939a463138b8540f7" },
+      { "path": "package-lock.json", "sha256": "93987ae25f6a4fb991d4c49128dd2e079214ab29f1a1416115cbf9942ea7cb9c" },
+      { "path": "package.json", "sha256": "fb77098e474b167ef46f1320eff607cbe4481e67bb122d81a993d6cf315db9ab" },
+      { "path": "src/events.ts", "sha256": "9ea7478d5f67f2f990f6186c02259bdb89efd88cda804b824d4a1a5422bbc21f" },
+      { "path": "test/public.test.mjs", "sha256": "692d72cd85ffe80d47175e7a58181b243ca23295690052bd0e5ce19425099010" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "14-idempotent-events",
+  "validatorHash": "1f8cb9351b11c97c38cf8ccfe7e17a46834dcf675fdaf92b25538238ea480fc1",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

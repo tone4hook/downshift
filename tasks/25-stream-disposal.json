@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "25-stream-disposal",
+  "split": "dev",
+  "publicPrompt": "Repair the event subscription adapter. Delivery must stop after disposal, unsubscribe must run exactly once, and pending next() calls must resolve as done when disposed. Queued values retain order while active. Repeated dispose is safe. Preserve createQueue and subscribeStream APIs.",
+  "fixture": {
+    "directory": "public/25-stream-disposal",
+    "hash": "c19d1bce2d6dda83bca233d347903f15fb5bc6171041088ce6cd2a7ca644634a",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "817b973c53743958db1004ccfe89d30f3b2cbeee2afda226ec1cb82f0aaceb54"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "4b8ebcd5d4d8bb4ef14c74756984c90ef58081d1c625ef5004d1a1992e5ae8db"
+      },
+      {
+        "path": "package.json",
+        "sha256": "38af2ae7b056162f6c011ff0fcc1cf8f55569ca33b5aad12d95e77fe5d6711d4"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "fa68d009e4cee65d5c4bed7987f105043a4d7cfc77af2853e249120cc3d1f000"
+      },
+      {
+        "path": "src/queue.ts",
+        "sha256": "664ab57f5816309576c33b0d0234c8e545d4b210b06a12fd7615b15570d94f66"
+      },
+      {
+        "path": "src/stream.ts",
+        "sha256": "950aaaf54729671ffee661ec0409b85b0d7bca90c3c880b8566d012b502d992a"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "91fa4233c4682d0b392d26429663b1e707b055005b289690e1ba4275dcc8b12d"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "25-stream-disposal",
+  "validatorHash": "3e6b7278f262496deb7635e1d44d0f3e282b52df33f589abad8a253f94f85e29",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

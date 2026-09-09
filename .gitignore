@@ -1,0 +1,21 @@
+node_modules/
+.pnpm-store/
+coverage/
+dist/
+results/
+rust/switchyard-bridge/target/
+
+# Local configuration and credentials
+config/lab.local.json
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp

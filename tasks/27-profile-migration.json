@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "27-profile-migration",
+  "split": "heldout",
+  "publicPrompt": "Upgrade saved profiles from version 1 {name,endpoint} to version 2 {name,connection:{url},enabled}. Preserve false in existing version 2 profiles; default enabled to true only when absent. Load must migrate without changing the stored input; save must persist version 2 and validate an http(s) URL before writing. Reject unknown versions with UNSUPPORTED_VERSION and invalid URLs with INVALID_URL.",
+  "fixture": {
+    "directory": "public/27-profile-migration",
+    "hash": "770e60175b5245894fac8c608854ce50291ba78b4d257f1f6167067780f5a9d2",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "01a47bb6f58628b302389c00f563267776ef233a296895a45df77c280dfa5520"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "a1d514a5fad18331637a9841a65fded5e6e5a226d13403c86d906e929965b6f7"
+      },
+      {
+        "path": "package.json",
+        "sha256": "03db4575a8207056b96366db3fc92a0f6eee447fd6e2a9f1121fad7855ee3101"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "24db11bc1a362ce1e0cecdff9a9826995edc86913b78c24cde8d9219fc61ed32"
+      },
+      {
+        "path": "src/migration.ts",
+        "sha256": "35284959d14bcb4bd6578b8c92b00f974c9801437d9cbf8a9607583bb8ba663b"
+      },
+      {
+        "path": "src/profiles.ts",
+        "sha256": "10311728eef5705c9ee949b074c2730472e46668fc623038dac7736885b22d8a"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "f6359e3285f6cbb1cc171365ab15537163ece22186140b8604a177586d2bbd36"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "27-profile-migration",
+  "validatorHash": "6bd8422157c722591f4c8cf9d4e341512f75b35588247ce3b74c16d8933790f0",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

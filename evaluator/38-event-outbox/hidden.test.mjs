@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {pathToFileURL} from 'node:url';
+const api=await import(pathToFileURL(process.cwd()+'/src/index.ts').href);
+test('transaction rollback and minimal event payload',async()=>{let user={id:'u',name:'Old',email:'private',passwordHash:'secret'};let events=[];let fail=true;const repo={append:async()=>{throw Error('outside')},transaction:async fn=>{let draft=user;const buffer=[];const out=await fn({user:async()=>draft,update:async row=>draft=row,append:async event=>{if(fail)throw Error('storage');buffer.push(event)}});user=draft;events.push(...buffer);return out;}};await assert.rejects(api.renameUser(repo,'u',' New '),/storage/);assert.equal(user.name,'Old');fail=false;await api.renameUser(repo,'u',' New ');assert.equal(user.name,'New');assert.deepEqual(events,[{type:'user.renamed',payload:{userId:'u',name:'New'}}]);await api.renameUser(repo,'u','New');assert.equal(events.length,1);});
+test('invalid names and missing user',async()=>{for(const name of ['  ','x'.repeat(81)])assert.throws(()=>api.normalizeName(name),/INVALID_NAME/);await assert.rejects(api.renameUser({transaction:async fn=>fn({user:async()=>null})},'missing','Name'),/NOT_FOUND/);});

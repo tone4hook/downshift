@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "resource lifecycle",
+  "mutations": [
+    {
+      "id": "forward-disposal",
+      "module": "src/stack.ts"
+    },
+    {
+      "id": "setup-leak",
+      "module": "src/session.ts"
+    },
+    {
+      "id": "closed-registration",
+      "module": "src/stack.ts"
+    }
+  ]
+}

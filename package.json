@@ -1,0 +1,42 @@
+{
+  "name": "downshift",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "cargo test --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 --maxWorkers=1 --fileParallelism=false tests/phase01 tests/phase02 tests/phase03 tests/phase04 tests/phase05 tests/phase06 tests/phase07 tests/phase08 tests/phase09 tests/phase10 tests/phase11 tests/phase12 tests/depth",
+    "test:phase01": "cargo test --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase01",
+    "test:phase02": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase02",
+    "test:phase03": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase03",
+    "test:phase04": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase04",
+    "test:phase05": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase05",
+    "test:phase06": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase06",
+    "test:phase07": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase07",
+    "test:phase08": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase08",
+    "test:phase09": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase09",
+    "test:phase10": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase10",
+    "test:phase11": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase11",
+    "test:phase12": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 tests/phase12",
+    "check:docs": "tsx scripts/check-docs.ts",
+    "test:depth": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 --maxWorkers=1 --fileParallelism=false tests/depth",
+    "test:contracts": "cargo build --manifest-path rust/switchyard-bridge/Cargo.toml --locked --quiet && vitest run --testTimeout=30000 --maxWorkers=1 --fileParallelism=false tests/phase01 tests/phase04 tests/phase05 tests/phase06 tests/phase07 tests/phase09 tests/depth"
+  },
+  "dependencies": {
+    "@earendil-works/pi-ai": "0.85.0",
+    "@earendil-works/pi-coding-agent": "0.85.0",
+    "@earendil-works/pi-server": "0.85.0",
+    "ajv": "8.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.19",
+    "tsx": "4.22.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.9"
+  }
+}

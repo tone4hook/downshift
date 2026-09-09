@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "authorization",
+  "mutations": [
+    {
+      "id": "admin-tenant-bypass",
+      "module": "src/authorize.ts"
+    },
+    {
+      "id": "duplicates",
+      "module": "src/bulk.ts"
+    },
+    {
+      "id": "partial-delete",
+      "module": "src/bulk.ts"
+    }
+  ]
+}

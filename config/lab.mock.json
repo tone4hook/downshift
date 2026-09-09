@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "authProfile": "mock",
+  "models": {
+    "classifier": {
+      "provider": "mock",
+      "model": "classifier",
+      "billing": "subscription"
+    },
+    "weak": {
+      "provider": "mock",
+      "model": "weak",
+      "billing": "unknown"
+    },
+    "strong": {
+      "provider": "mock",
+      "model": "strong",
+      "billing": "unknown"
+    }
+  },
+  "routing": {
+    "weakThreshold": 0.75,
+    "weakCapabilityDescription": "Deterministic fake provider used only for integration checks."
+  },
+  "execution": {
+    "maxAgentTurns": 40,
+    "timeoutSeconds": 900,
+    "requestTimeoutSeconds": 120,
+    "validationTimeoutSeconds": 120,
+    "contextTokenCap": 32768,
+    "maxOutputTokens": 4096,
+    "thinking": "off"
+  }
+}

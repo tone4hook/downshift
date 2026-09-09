@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "06-money-total",
+  "split": "dev",
+  "publicPrompt": "Refactor the duplicated total calculation in `src/total.ts`. The public API is `calculateTotal(lines: { unitCents: number; quantity: number }[], discountPercent: number): number`. Require nonnegative safe-integer cents and quantities and an integer discount from 0 through 100, throwing RangeError for invalid or unsafe values. Sum undiscounted lines and round the final discounted amount once. Return integer cents and do not mutate inputs.",
+  "fixture": {
+    "directory": "public/06-money-total",
+    "hash": "cd022ac053ae250cdb76e15099125b913605414e24bc423d6bf0f8503ac3c6c2",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "486157cdd1242969d23843fcf981a2a3701caf7f8c8523240e0ae19951c8f689"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "776d20a2caec3cd0c09db44da4ba15aa7a8446ca903ff3a4f82b3da804a49677"
+      },
+      {
+        "path": "package.json",
+        "sha256": "29602e9511496e6fa5ff11ee26da0fbc5cec3e9dd0361818e4905613bb61fd1b"
+      },
+      {
+        "path": "src/total.ts",
+        "sha256": "294cb2b686044f0d35b90acecfd28edd549b38dcef8096633f3414723a0483c9"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "8806264a8ec44b8a74af1fe86678fb82a2e214f29c8c3db08ee00f7f7a7dd0b7"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"]
+    }
+  ],
+  "evaluatorReferenceId": "06-money-total",
+  "validatorHash": "53f5ae5a0e3f61be032bf8d044da1d8f2d83d0d9eb4bda572764ca14c32de171",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

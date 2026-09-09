@@ -1,0 +1,6 @@
+{
+  "name": "05-safe-result-types",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module"
+}

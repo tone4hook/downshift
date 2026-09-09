@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "taskId": "05-safe-result-types",
+  "hiddenChecks": [
+    {
+      "name": "hidden-behavior",
+      "argv": ["node", "--experimental-strip-types", "--test", "{evaluator}/hidden.test.mjs"]
+    },
+    {
+      "name": "hidden-types",
+      "argv": ["node", "{evaluator}/typing.test.mjs"]
+    }
+  ],
+  "referenceDirectory": "reference",
+  "incompleteDirectory": "incomplete"
+}

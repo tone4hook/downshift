@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "12-atomic-transfer",
+  "split": "heldout",
+  "publicPrompt": "Implement `transfer(repo, fromId, toId, cents): Promise<void>` in `src/transfer.ts`. Validate positive safe-integer amount (`INVALID_AMOUNT`), distinct accounts (`SAME_ACCOUNT`), both accounts (`NOT_FOUND`), then funds (`INSUFFICIENT_FUNDS`). Read and write both balances in one transaction, commit only on fulfillment, and propagate storage errors.",
+  "fixture": {
+    "directory": "public/12-atomic-transfer",
+    "hash": "0d69b88edabc1ac0cc39b4ab87cd402ba115551444dbf10778a2f623c5ab0c0d",
+    "files": [
+      { "path": "README.md", "sha256": "2430371b0c1f17cefd265dd0a3f3abbb075b8fa31807b1e7f666a54fd3b2fbb2" },
+      { "path": "package-lock.json", "sha256": "883de2226947fd4553ee84012863c3399eb9a2a71cb8d74f62365351b922c5ae" },
+      { "path": "package.json", "sha256": "54386e506500bd2ee5c781eaa50f4fcd74473618ea6ceeda9fb68a213d19bcf3" },
+      { "path": "src/transfer.ts", "sha256": "39d50267d34a757b12bdef4a7222c9fcf1407cd60f1685f44073ebd967f3a359" },
+      { "path": "test/public.test.mjs", "sha256": "9d7c84fb6c4b1e3ffbcd2f4b67a89a0ff6123a7f57ab07b58289dc6791d6e94f" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "12-atomic-transfer",
+  "validatorHash": "a3a0379e69a6d85876b040c3b09f2b59ad30d7c7164978b404ada96efb3dc11f",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

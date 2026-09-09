@@ -1,0 +1,1 @@
+export function createVersions(){const versions=new Map<string,number>();return {next(key:string){const v=(versions.get(key)??0)+1;versions.set(key,v);return v;},current:(key:string,v:number)=>versions.get(key)===v};}

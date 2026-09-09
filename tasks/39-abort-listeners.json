@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "39-abort-listeners",
+  "split": "heldout",
+  "publicPrompt": "Fix cancellable sleep using an injected scheduler. An already-aborted signal must reject with the exact abort reason and schedule nothing. On later abort, cancel the timer and reject; on timer completion, remove the abort listener and resolve. Settle once, clean up listeners in both paths, and support abort reasons such as 0. Preserve sleepWithSignal and attachAbort APIs.",
+  "fixture": {
+    "directory": "public/39-abort-listeners",
+    "hash": "dde74be61299ed255875f89bd52250b80cedd187778e919c5d0e74c94b998f5a",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "32fe9a69f6a0e3223710b9910481e13b196e0422eedf1a02b5ba6af45c8a8617"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "e20eec93ef3e00f87842a4342844f309a117d6d3968eae76f9b042bca1aa8fc8"
+      },
+      {
+        "path": "package.json",
+        "sha256": "3fa95eab6f2d4125f17d6ae17289a359df96a1da335dac4aa5944d75e6cbfdc2"
+      },
+      {
+        "path": "src/abort.ts",
+        "sha256": "58b15c411b8b8a27ab100ef02587b601c4a95e922703612e3f8d6b259563882d"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "fc35410243a866a7f227eeb9584000aa6058ba7b6ef0846a19098e34fb2e88c7"
+      },
+      {
+        "path": "src/sleep.ts",
+        "sha256": "88a48347a0c9aac9df414d6d80f4330dd8bb9f4fef8e8274d20d0ae360573062"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "3e7ac41a776c97c1a88d72554c253436f4c415c2c5f00f2710d8eeee41981da7"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "39-abort-listeners",
+  "validatorHash": "4596bffec30f024f9eacb8f6c33489afd911d8b7d3d1db73eb742aa5a4a7ebec",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

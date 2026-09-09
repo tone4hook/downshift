@@ -1,0 +1,1 @@
+export function attachAbort(signal:any,callback:any){if(signal.aborted){callback(signal.reason||new Error("ABORTED"));return ()=>{};}const listener=()=>callback(signal.reason||new Error("ABORTED"));signal.addEventListener('abort',listener,{once:true});return ()=>signal.removeEventListener('abort',listener);}

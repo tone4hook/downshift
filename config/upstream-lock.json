@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "pi": {
+    "repository": "https://github.com/earendil-works/pi",
+    "version": "v0.85.0",
+    "revision": "107d79f11072bbc8a3a757ed7fd69596bee7d68c"
+  },
+  "switchyard": {
+    "repository": "https://github.com/tone4hook/Switchyard",
+    "upstreamRepository": "https://github.com/NVIDIA-NeMo/Switchyard",
+    "version": "0.2.0",
+    "revision": "2dd67d76ad12961f92359153e03686773e3e8761",
+    "upstreamBaseRevision": "9a743e89223a0d5b14011f1226d5b068f730a3b8",
+    "pullRequest": "https://github.com/tone4hook/Switchyard/pull/1",
+    "crates": [
+      "switchyard-libsy",
+      "switchyard-protocol"
+    ],
+    "compatibilityDocument": "docs/upstream-compatibility.md"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "03-stable-filter",
+  "split": "dev",
+  "publicPrompt": "Add case-insensitive text and status filtering to the item list. Implement `filterItems(items: Item[], query: { text?: string; status?: Item[\"status\"] }): Item[]` in `src/items.ts`. Text matches trimmed title substrings case-insensitively, blank text matches all, status combines with text using AND, and the result preserves stable order without mutating input. Return an empty array when nothing matches.",
+  "fixture": {
+    "directory": "public/03-stable-filter",
+    "hash": "07e5464c1856f3834690b97aa785a8fb36f853861a0e8d9279ef3edaad34fb91",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "da7e23e536c6d92a5ed0e161a22738953b7687d16c5f0843ffbebfac78736cdd"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "5e990f4a40dd76a0ae127da4f3f9368404622f0b7c2f01d303ffe79d6e205d24"
+      },
+      {
+        "path": "package.json",
+        "sha256": "d8b3656d10ffda59c70900965e10c368c4620e6ddb937440ba2b48eeaaf7e4b3"
+      },
+      {
+        "path": "src/items.ts",
+        "sha256": "cde3dd31c6a87dd6facd2546409a91a7a67bd513ab7e2b0bc19250d46a99c249"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "c05e3492e95f5a7f2db3b369624f71104b5f043c6fe56b231cfa867e95112c77"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"]
+    }
+  ],
+  "evaluatorReferenceId": "03-stable-filter",
+  "validatorHash": "0c4138efa8e1ebbf0a76a2afa7b880b1867a5144514a352dd677fd3bf21369ca",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

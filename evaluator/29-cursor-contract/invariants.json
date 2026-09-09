@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "category": "cross-module APIs",
+  "mutations": [
+    {
+      "id": "cursor-trimming",
+      "module": "src/page.ts"
+    },
+    {
+      "id": "empty-page-stop",
+      "module": "src/pagination.ts"
+    },
+    {
+      "id": "loop-guard",
+      "module": "src/pagination.ts"
+    }
+  ]
+}

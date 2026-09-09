@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "30-error-contract",
+  "split": "heldout",
+  "publicPrompt": "Unify the request client error contract. Decode successful 204 responses as null without parsing JSON. For non-2xx responses, throw RequestError with status, code (body.code or HTTP_ERROR), and retryable true only for 429 or 5xx. A malformed error body must still produce RequestError. Preserve the original transport exception and avoid retrying requests.",
+  "fixture": {
+    "directory": "public/30-error-contract",
+    "hash": "c7025c45c4860b83b8f02bdb2846c427351c80683e1a6e853d1a600358bdea68",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "24f7035f57f90571f37b3a28b6053d87a864aa0de39e46c84bba893295e8a25c"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "cc0e5c8c81a92552ca56f4a718e3aed389d52de34ac6b3d10d80d55f99e895a5"
+      },
+      {
+        "path": "package.json",
+        "sha256": "08eed3f3ac057f6cf37d1d921c9389b60270ab867207433d60fd68ee5fc399c7"
+      },
+      {
+        "path": "src/client.ts",
+        "sha256": "3e1a44db9974ba6f4d5e835fbd231b0c598554e5be8e7ff27decc1bb984c3858"
+      },
+      {
+        "path": "src/errors.ts",
+        "sha256": "ab15d0d22c239a76af30ee4480ac38f6eb6168a63d450728ffdecac00d044488"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "35cd13bd331dda401f935afb573dcbf41ec8e743a5bb6723b4f141a18e96416d"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "dc30af07601af10ca71da09a0f50de8490ea6282a1f7f33a7951c2d3ea9ff125"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "30-error-contract",
+  "validatorHash": "f959c2af5a0d24c9eb533d62c990e2e2366b660cf78197b4aa62cf733089fee5",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "28-release-arguments",
+  "split": "heldout",
+  "publicPrompt": "Repair release argument parsing and command construction. Support --tag VALUE and --dry-run only before --; after -- preserve every argument literally for the package manager. Reject unknown options, missing/empty tags, and tag values starting with -- as INVALID_ARGUMENT. Build an argv array for npm publish, never a shell command. Dry runs must not invoke the runner.",
+  "fixture": {
+    "directory": "public/28-release-arguments",
+    "hash": "5f03df23f6440d926fef49c2eb1876923b8c51b30377acb483372a3d2322ae20",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "e961d4a171ef68660f1b537eb0b7fe8e44482cb5757c1213d0c2407e917ee377"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "735b25e80b474704bf20de287281a3c7142bbd6798a562f720b5db24e02a6d5f"
+      },
+      {
+        "path": "package.json",
+        "sha256": "433382a88720f60a969704df4b64e09a19412520616d80d6edb24564919066aa"
+      },
+      {
+        "path": "src/args.ts",
+        "sha256": "d63e384e3a4128232a36daa9894167e2a9832acd1a0c2dc3a47bfefa151b1a8e"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "7fcebcd7536934b93118d747a0e400f8cf496d4258e3ffff654905a3f3f8d010"
+      },
+      {
+        "path": "src/release.ts",
+        "sha256": "415931db24a8a992580b7aeffb4fa3592925e1f94b7b8d564b753eacfe5c0983"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "8b9d6d9058fd6e880803f82f5ca18d5dd9316b9ec486df8974ee22deaae743a0"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "28-release-arguments",
+  "validatorHash": "99e8df4c6539054f77d561f57122e54b36d821534109a03beda4a958fa16aa34",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

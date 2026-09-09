@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "38-event-outbox",
+  "split": "heldout",
+  "publicPrompt": "Repair user rename and outbox creation. Trim and validate names (1..80 characters), then update the user and append a user.renamed event in the same transaction. The event must contain userId and the normalized name but no email or passwordHash. Missing users yield NOT_FOUND; failed event insertion rolls back the rename. An unchanged normalized name performs neither write.",
+  "fixture": {
+    "directory": "public/38-event-outbox",
+    "hash": "f0d4cb9b6dc7d66b726fcfb9d24f1b589b29e7748ee6df8792475c32f1eacecf",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "8c87f8b93b47b391f190bfd7387b816ee85d3adfdd68ef8f055165cf4a4ce9b2"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "0d9d0e28ea9ec1502299c76fcb943a23caecd16d8444b35e31465467a5634797"
+      },
+      {
+        "path": "package.json",
+        "sha256": "b5298fdf7b8a2c29aa26d7583add268a40136b17cc52fa0f3a0bd0417fdeefc1"
+      },
+      {
+        "path": "src/event.ts",
+        "sha256": "8fcf80bc1133db111d284465fda5359efa942e2f04a8041747337de547906f96"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "8a6bf62d2ba43d8a9b40c15b7dda3f4b61bfcd86ad7fbde986c2df3b5d6b9463"
+      },
+      {
+        "path": "src/rename.ts",
+        "sha256": "dcaffbff6fee9235b8e62968c755d6d066c8e2447678c92d26d87ea0fd39f29f"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "143820709e05eede69387df91d17419514b841d768de15f30e71599f356d9406"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "38-event-outbox",
+  "validatorHash": "04bb162cb05e01cad2b626cf6c734df77fad4f1f584edcad364384e1298f3d6f",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

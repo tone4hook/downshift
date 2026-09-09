@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "01-null-summary",
+  "split": "dev",
+  "publicPrompt": "Make customer display names tolerate missing or blank names while preserving real names. Return `Unknown customer` for missing, empty, or whitespace-only names, trim nonblank names, and do not mutate the input object. The public API is `displayName(customer: { name?: string | null }): string` in `src/customer.ts`.",
+  "fixture": {
+    "directory": "public/01-null-summary",
+    "hash": "a7a5f9830002835a179d8654753779734cbe11d3dac18822c94fbd0be8a4d3d3",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "d0ec3c3cf70492780aea97f7083435f98e289e0b18c47a3b9ab924945b63e54d"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "51cc49ae870933ba96f93f5676be89a2004907630ff57a457eb9b7d49740df55"
+      },
+      {
+        "path": "package.json",
+        "sha256": "637816372194f4b4aa853cc3dae61cd7dc73613077fa4a05a5483c7dfd814054"
+      },
+      {
+        "path": "src/customer.ts",
+        "sha256": "4c3b866eb878fa80493fb8ae3a358e0c31395eeddee60afd93ba350a6775f8b4"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "9a918680543253d76b532b5d4ec9b93581323210355e7e3c3270a013c8fc6629"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"]
+    }
+  ],
+  "evaluatorReferenceId": "01-null-summary",
+  "validatorHash": "f690f1da2240d03b75a43e20b9baf019a21991e80c64c5fc419f2930dacffae9",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

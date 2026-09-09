@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "04-page-boundaries",
+  "split": "dev",
+  "publicPrompt": "Fix pagination boundaries in `src/paginate.ts`. The public API is `paginate<T>(rows: T[], page: number, pageSize: number): { items: T[]; total: number; pageCount: number }`. Pages are one-based. Require positive integer page and pageSize values and throw RangeError otherwise. A past-end page returns no items. Empty input has pageCount 0; other page counts round up. Preserve row order and do not mutate the input.",
+  "fixture": {
+    "directory": "public/04-page-boundaries",
+    "hash": "c9eea833b12c29a7e38babda2085e04cc7de23dfe1e4e43c79c6b84e9507ba7d",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "8ed5459ad0424ff6f1d5ae445b1b65c68f4b15748fed8e9f4f3fd5ab5c7a1486"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "0a4a50c2e87f831e52194eb070c41e38d5a3853e11899550fc619f959981d67d"
+      },
+      {
+        "path": "package.json",
+        "sha256": "01ca81bf4ff4af05c32d25488f9ef4b12d56b4d763e5f3b12b4b18fd18ac6f90"
+      },
+      {
+        "path": "src/paginate.ts",
+        "sha256": "b23a2486b1f93d81a4b15a300d32a96d0228b1f9563f4d6353f939952b53d200"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "956d76236cdd7cce621d71d18845081e0fdf1665d90566a8f239ba7cd7a0542d"
+      }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"]
+    }
+  ],
+  "evaluatorReferenceId": "04-page-boundaries",
+  "validatorHash": "b543c4d61c5b8d1c02cb01bc82ede1205cbb1f9c2fef0b93abb0332b4cb14ade",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

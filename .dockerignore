@@ -1,0 +1,12 @@
+.git
+node_modules
+.pnpm-store
+rust/switchyard-bridge/target
+results
+config/lab.local.json
+.env
+.env.*
+*.key
+*.pem
+*.p12
+.DS_Store

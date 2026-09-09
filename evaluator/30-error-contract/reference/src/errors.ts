@@ -1,0 +1,1 @@
+export class RequestError extends Error {status:number;code:string;retryable:boolean;constructor(status:number,body:any){super('Request failed');this.name='RequestError';this.status=status;this.code=typeof body?.code==='string'?body.code:'HTTP_ERROR';this.retryable=status===429||status>=500;}}

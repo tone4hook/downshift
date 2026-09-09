@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "16-config-precedence",
+  "split": "heldout",
+  "publicPrompt": "Implement `resolveConfig(defaults, file, env)` in `src/config.ts`. Apply defaults < file < defined env while preserving false/zero and ignoring missing env. Parse strict decimal numeric env values and exact true/false; validate final values, reject all invalid configuration with `INVALID_CONFIG`, ignore unrelated keys, and do not mutate inputs.",
+  "fixture": {
+    "directory": "public/16-config-precedence",
+    "hash": "e01cd478a64c5936c63d28a310655ce587bf0f9c3d374d1910c8ea9414a3b2e6",
+    "files": [
+      { "path": "README.md", "sha256": "bf57dca9e96af45f608ea696ad6fc66e6c7329ce0c166b77d8be7680ef7703c9" },
+      { "path": "package-lock.json", "sha256": "0b7e3fe71bdbfe6c80751d4c8a7e04fe5ce3b19d47389632d0d7ae6cd75f0490" },
+      { "path": "package.json", "sha256": "80bc29199ea7f32a21f44db59bf9304019c51fe77bf0015b17881356da6fa746" },
+      { "path": "src/config.ts", "sha256": "39eee1ff5259c63c39c59236325cb17aebf0727be0404a8e7affa06743e32a1d" },
+      { "path": "test/public.test.mjs", "sha256": "dc5080a4e206158b852ff2d8112771d912ffa8e90d9bbd7e1449740db07b8772" }
+    ]
+  },
+  "setupArgv": ["npm", "ci", "--ignore-scripts", "--offline"],
+  "publicChecks": [{ "name": "public-regression", "argv": ["node", "--experimental-strip-types", "--test", "test/public.test.mjs"] }],
+  "evaluatorReferenceId": "16-config-precedence",
+  "validatorHash": "2ef994bea2cd41dee887bb8f1435effd9292dfea38e15191663112daabbc132d",
+  "editableDirectories": ["src"],
+  "allowedNewFileExtensions": [".ts"],
+  "protectedPaths": ["README.md", "package.json", "package-lock.json", "test/public.test.mjs"],
+  "limits": { "validationTimeoutSeconds": 120, "maxFileBytes": 65536 }
+}

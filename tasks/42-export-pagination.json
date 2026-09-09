@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "42-export-pagination",
+  "split": "heldout",
+  "publicPrompt": "Fix export pagination over an immutable snapshot. Filter by tenant and minimum updatedAt before sorting by numeric updatedAt and then code-point ID. Paginate by the exclusive (updatedAt,id) cursor, with a positive integer limit <=100. Return only id/value/updatedAt and the last returned tuple as nextCursor only when more matching records remain. Preserve input order and contents. Missing cursor means the first page.",
+  "fixture": {
+    "directory": "public/42-export-pagination",
+    "hash": "e036eecc41bac74688c106b54e2a97e71d1534c67681422d4220e975eba8e4b3",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "09ab66496666df0b9fb7ca0b2b334730c0a7072e247b6b70dbacaa0d6680729d"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "655b192b8d23c4e568010780d8859394b0ba8a663f28104e9ec0b4c8cc18ebd7"
+      },
+      {
+        "path": "package.json",
+        "sha256": "1598ef666012a9ccfa57ae2fc469149fb2272ea86732ecd2ae8734fabde44290"
+      },
+      {
+        "path": "src/export.ts",
+        "sha256": "8ae5450045bd5213799b68810ba44781262d8a8f7a6c109a4aeacf078d02573b"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "f6f86214ce1c19ecea77618dca702d06a2f3698dcfea32f60cf4bdda33dca27a"
+      },
+      {
+        "path": "src/order.ts",
+        "sha256": "6b2af08fc62c8ce9d9fcffa3382b7edd2b98490547072cdf5c966434bc4cb607"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "e03daf0f22f88739c88285e44f145697b7995cd4ff17df4deec78d85bfd99982"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "42-export-pagination",
+  "validatorHash": "70423e2a735cd21f6e7d83dcd5bbad6a852be55d24f31afa424193172f74ca2b",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

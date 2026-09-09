@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "40-resource-stack",
+  "split": "heldout",
+  "publicPrompt": "Repair the resource stack used by session setup. Dispose registered resources in reverse acquisition order, continue disposing after errors, and reject with an AggregateError containing errors in disposal order. Disposal must be idempotent, and registrations after disposal begins must throw CLOSED. If setup fails after acquiring resources, run cleanup before rethrowing the setup error; preserve that error when cleanup succeeds.",
+  "fixture": {
+    "directory": "public/40-resource-stack",
+    "hash": "b746bc635ac88dbf7147347a7f44d6e9fb6ff475ae85aacfef6fce0e4ee45a8f",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "91346998a64111d55462548a675b8d3c78ceeb1903b09e0a059ff68495ce6760"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "4fa9f64031effe96d816444bdb05fc8f2bcce45fab18608d50d4e329ddd76e71"
+      },
+      {
+        "path": "package.json",
+        "sha256": "db10588fb73391c2c39c623eb36586d765adcd14e3a1e7a9cb0ec0f92aba417d"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "e2aab65bc11a3b62bfd3391f657ed745b84dc9fea5906fdb50a5dbd3858aad3b"
+      },
+      {
+        "path": "src/session.ts",
+        "sha256": "f63457d28fe0df4ea98ac551e4cf76ebbc8d32ddf1e4ac9e631059a1bddfbd75"
+      },
+      {
+        "path": "src/stack.ts",
+        "sha256": "5bc3a9664c372b62fcc9d8475a7e79d3f33612fedab01f39c42b89acca511e17"
+      },
+      {
+        "path": "test/public.test.mjs",
+        "sha256": "9867b01364833ffea188b5132571e8b8a22fd0829c8ff58f57e5162d8a271d08"
+      }
+    ]
+  },
+  "setupArgv": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--offline"
+  ],
+  "publicChecks": [
+    {
+      "name": "public-regression",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "test/public.test.mjs"
+      ]
+    }
+  ],
+  "evaluatorReferenceId": "40-resource-stack",
+  "validatorHash": "ebdbd95946398808c8c09b94814e694c211b40fd6b88bbb7ea0c4ede7969bab5",
+  "editableDirectories": [
+    "src"
+  ],
+  "allowedNewFileExtensions": [
+    ".ts"
+  ],
+  "protectedPaths": [
+    "README.md",
+    "package-lock.json",
+    "package.json",
+    "test/public.test.mjs"
+  ],
+  "limits": {
+    "validationTimeoutSeconds": 120,
+    "maxFileBytes": 65536
+  }
+}

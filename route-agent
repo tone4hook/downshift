@@ -1,0 +1,1561 @@
+#!/bin/sh
+set -eu
+
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+caller=$(pwd -P)
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  route-agent build
+  route-agent dev -- COMMAND [ARG...]
+  route-agent auth [--auth-profile NAME] [--callback-port PORT]
+  route-agent models [--auth-profile NAME] [--refresh] [--json]
+  route-agent config check [--config FILE] [--auth-profile NAME]
+  route-agent doctor [--config FILE] [--auth-profile NAME] [--probe-models]
+  route-agent run --project PATH [--config FILE] [--auth-profile NAME] [--mode MODE] [--resume SESSION_ID] [--] [PROMPT]
+  route-agent eval verify [--level quick|full]
+  route-agent eval assess --experiment PATH --verification PATH
+  route-agent eval probe-routing --experiment PATH [--live]
+  route-agent eval fixtures --suite SUITE [--corpus core|harness|combined] [--output PATH]
+  route-agent eval plan --suite SUITE [--corpus core|harness|combined] [--from-dev PATH] [--live] [--repetitions N] [--seed N] [--config FILE]
+  route-agent eval run --suite SUITE [--corpus core|harness|combined] [--live] [--repetitions N] [--seed N] [--max-cost-usd N] [--config FILE] [--auth-profile NAME] [--policy FILE]
+  route-agent eval resume --experiment PATH [--live] [--config FILE] [--auth-profile NAME]
+  route-agent eval freeze --experiment PATH --threshold NUMBER [--benchmark-profile harness-v1] [--prior-exposure TEXT]
+  route-agent report --experiment PATH
+  route-agent analyze thresholds --experiment PATH --split dev
+EOF
+  exit 2
+}
+
+fail() {
+  printf 'route-agent: %s\n' "$1" >&2
+  exit "${2:-2}"
+}
+
+compose() {
+  docker compose --project-directory "$root" -f "$root/compose.yaml" "$@"
+}
+
+require_docker() {
+  command -v docker >/dev/null 2>&1 || fail "Docker with Compose v2 is required"
+  docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required"
+  docker info >/dev/null 2>&1 || fail "Docker daemon is unavailable"
+}
+
+image_for() {
+  project_name=$(compose_name)
+  image="${project_name}-$1"
+  docker image inspect "$image" >/dev/null 2>&1 ||
+    fail "required image '$1' is unavailable; run ./route-agent build"
+  printf '%s\n' "$image"
+}
+
+compose_name() {
+  name=$(compose config 2>/dev/null | sed -n 's/^name: //p' | sed -n '1p')
+  [ -n "$name" ] || fail "unable to resolve the Compose project name"
+  case "$name" in
+    *[!a-zA-Z0-9_.-]*) fail "Compose project name contains unsupported characters" ;;
+  esac
+  printf '%s\n' "$name"
+}
+
+validate_profile() {
+  profile=$1
+  case "$profile" in
+    ""|*[!a-z0-9-]*|-*) fail "auth profile must match [a-z0-9][a-z0-9-]{0,31}" ;;
+  esac
+  [ "${#profile}" -le 32 ] || fail "auth profile must match [a-z0-9][a-z0-9-]{0,31}"
+}
+
+validate_callback_port() {
+  port=$1
+  case "$port" in
+    ""|*[!0-9]*) fail "callback port must be an integer from 1024 to 65535" ;;
+  esac
+  [ "$port" -ge 1024 ] && [ "$port" -le 65535 ] ||
+    fail "callback port must be an integer from 1024 to 65535"
+}
+
+reject_mount_delimiters() {
+  value=$1
+  label=$2
+  case "$value" in
+    *:*) fail "$label contains unsupported mount delimiter ':'" ;;
+    *'
+'*) fail "$label contains an unsupported newline" ;;
+  esac
+}
+
+canonical_directory() {
+  path=$1
+  case "$path" in
+    /*) ;;
+    *) path="$caller/$path" ;;
+  esac
+  reject_mount_delimiters "$path" "project path"
+  [ -d "$path" ] || fail "project directory does not exist: $path"
+  canonical=$(CDPATH= cd -- "$path" 2>/dev/null && pwd -P) ||
+    fail "unable to canonicalize project directory: $path"
+  reject_mount_delimiters "$canonical" "canonical project path"
+  printf '%s\n' "$canonical"
+}
+
+canonical_file() {
+  path=$1
+  case "$path" in
+    /*) ;;
+    *) path="$caller/$path" ;;
+  esac
+  reject_mount_delimiters "$path" "config path"
+  [ -f "$path" ] || fail "config file does not exist: $path"
+  directory=$(CDPATH= cd -- "$(dirname -- "$path")" 2>/dev/null && pwd -P) ||
+    fail "unable to canonicalize config directory: $path"
+  canonical="$directory/$(basename -- "$path")"
+  reject_mount_delimiters "$canonical" "canonical config path"
+  printf '%s\n' "$canonical"
+}
+
+cleanup_lock() {
+  if [ -n "${lock_dir:-}" ] && [ -d "$lock_dir" ] && [ -f "$lock_dir/invocation" ]; then
+    owner=$(sed -n '1p' "$lock_dir/invocation" 2>/dev/null || :)
+    if [ "$owner" = "${invocation_id:-}" ]; then
+      rm -f "$lock_dir/invocation" "$lock_dir/container"
+      rmdir "$lock_dir" 2>/dev/null || true
+    fi
+  fi
+}
+
+cleanup() {
+  code=$?
+  trap - 0 INT HUP TERM
+  for container in "${agent_container:-}" "${mock_container:-}" "${guard_container:-}"; do
+    [ -n "$container" ] && docker rm -f "$container" >/dev/null 2>&1 || true
+  done
+  [ -n "${network_name:-}" ] && docker network rm "$network_name" >/dev/null 2>&1 || true
+  [ -n "${ephemeral_auth_volume:-}" ] &&
+    docker volume rm "$ephemeral_auth_volume" >/dev/null 2>&1 || true
+  preserve_eval_temp=0
+  if ! cleanup_eval_trial; then
+    preserve_eval_temp=1
+    [ "$code" -ne 0 ] || code=3
+    printf 'route-agent: artifact collection failed; scratch evidence retained at %s\n' "${eval_temp:-unknown}" >&2
+  fi
+  cleanup_eval_lock
+  if [ "$preserve_eval_temp" -eq 0 ] && [ -n "${eval_temp:-}" ] && [ -d "$eval_temp" ]; then
+    rm -rf "$eval_temp"
+  fi
+  cleanup_lock
+  exit "$code"
+}
+
+cleanup_eval_trial() {
+  for container in "${eval_agent_container:-}" "${eval_mock_container:-}"; do
+    [ -n "$container" ] && docker rm -f "$container" >/dev/null 2>&1 || true
+  done
+  collection_status=0
+  collect_eval_artifacts || collection_status=3
+  [ -n "${eval_network:-}" ] && docker network rm "$eval_network" >/dev/null 2>&1 || true
+  for volume in \
+    "${eval_state_volume:-}" \
+    "${eval_dependency_volume:-}" \
+    "${eval_cache_volume:-}" \
+    "${eval_auth_volume:-}"
+  do
+    [ -n "$volume" ] && docker volume rm "$volume" >/dev/null 2>&1 || true
+  done
+  eval_agent_container=
+  eval_mock_container=
+  eval_network=
+  eval_state_volume=
+  eval_dependency_volume=
+  eval_cache_volume=
+  eval_auth_volume=
+  return "$collection_status"
+}
+
+collect_eval_artifacts() {
+  [ -n "${eval_artifact_scratch:-}" ] || return 0
+  run_evaluator \
+    -v "$eval_artifact_scratch:/agent-output:ro" \
+    -v "$eval_attempt_path:/attempt" \
+    "$evaluator_image" node /app/dist/evaluation/smoke-cli.js collect-attempt \
+    "/agent-output/attempts/$eval_attempt_id" /attempt || return 3
+  eval_artifact_scratch=
+}
+
+cleanup_eval_lock() {
+  if [ -n "${eval_lock_dir:-}" ] && [ -d "$eval_lock_dir" ]; then
+    owner=$(sed -n '1p' "$eval_lock_dir/invocation" 2>/dev/null || :)
+    if [ "$owner" = "${eval_lock_invocation:-}" ]; then
+      rm -f "$eval_lock_dir/invocation" "$eval_lock_dir/container"
+      rmdir "$eval_lock_dir" 2>/dev/null || true
+    fi
+  fi
+  [ -n "${eval_lock_container:-}" ] &&
+    docker rm -f "$eval_lock_container" >/dev/null 2>&1 || true
+  eval_lock_dir=
+  eval_lock_container=
+  eval_lock_invocation=
+}
+
+trap cleanup 0
+trap 'exit 130' INT
+trap 'exit 130' HUP TERM
+
+identity_for_project() {
+  output=$(docker run --rm --entrypoint node "$agent_image" \
+    /app/dist/launcher/container-cli.js identify "$1") ||
+    fail "project identity helper failed"
+  project_id=$(printf '%s\n' "$output" | sed -n 's/^project-id:\([0-9a-f][0-9a-f]*\)$/\1/p')
+  invocation_id=$(printf '%s\n' "$output" | sed -n 's/^invocation-id:\([0-9a-f-][0-9a-f-]*\)$/\1/p')
+  [ "${#project_id}" -eq 64 ] || fail "project identity helper returned invalid data"
+  [ "${#invocation_id}" -eq 36 ] || fail "project identity helper returned invalid data"
+}
+
+new_invocation() {
+  output=$(docker run --rm --entrypoint node "$agent_image" \
+    /app/dist/launcher/container-cli.js invocation) ||
+    fail "invocation identity helper failed"
+  invocation_id=$(printf '%s\n' "$output" | sed -n 's/^invocation-id:\([0-9a-f-][0-9a-f-]*\)$/\1/p')
+  [ "${#invocation_id}" -eq 36 ] || fail "invocation identity helper returned invalid data"
+}
+
+acquire_project_lock() {
+  lock_root="${TMPDIR:-/tmp}/route-agent-locks-$(id -u)"
+  umask 077
+  mkdir -p "$lock_root"
+  lock_dir="$lock_root/$project_id"
+  short_project=$(printf '%s' "$project_id" | cut -c1-12)
+  short_invocation=$(printf '%s' "$invocation_id" | tr -d '-' | cut -c1-8)
+  guard_container="${compose_project}-lock-${short_project}-${short_invocation}"
+  docker run --detach --name "$guard_container" \
+    --label "io.downshift.invocation=$invocation_id" \
+    --label "io.downshift.project=$project_id" \
+    --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+    --entrypoint /bin/sleep "$agent_image" infinity >/dev/null ||
+    fail "unable to create project lock guard" 3
+
+  if ! mkdir "$lock_dir" 2>/dev/null; then
+    old_invocation=$(sed -n '1p' "$lock_dir/invocation" 2>/dev/null || :)
+    old_container=$(sed -n '1p' "$lock_dir/container" 2>/dev/null || :)
+    old_running=false
+    old_label=
+    if [ -n "$old_container" ]; then
+      old_running=$(docker inspect --format '{{.State.Running}}' "$old_container" 2>/dev/null || :)
+      old_label=$(docker inspect --format '{{index .Config.Labels "io.downshift.invocation"}}' "$old_container" 2>/dev/null || :)
+    fi
+    if [ "$old_running" = "true" ] && [ -n "$old_invocation" ] && [ "$old_label" = "$old_invocation" ]; then
+      fail "project is already open by invocation $old_invocation"
+    fi
+    rm -f "$lock_dir/invocation" "$lock_dir/container"
+    rmdir "$lock_dir" 2>/dev/null ||
+      fail "stale project lock contains unexpected state: $lock_dir"
+    mkdir "$lock_dir" || fail "unable to reclaim stale project lock"
+  fi
+  printf '%s\n' "$invocation_id" >"$lock_dir/invocation"
+  printf '%s\n' "$guard_container" >"$lock_dir/container"
+}
+
+start_mock() {
+  mock_image=$(image_for mock)
+  short_invocation=$(printf '%s' "$invocation_id" | tr -d '-' | cut -c1-12)
+  network_name="${compose_project}-mock-${short_invocation}"
+  mock_container="${compose_project}-mock-${short_invocation}"
+  docker network create --internal \
+    --label "io.downshift.invocation=$invocation_id" "$network_name" >/dev/null ||
+    fail "unable to create isolated mock network" 3
+  docker run --detach --name "$mock_container" \
+    --label "io.downshift.invocation=$invocation_id" \
+    --network "$network_name" --network-alias mock-provider \
+    --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    -e LAB_CONTAINER_ROLE=mock \
+    -e MOCK_CREDENTIAL_LIFETIME_MS=-1 \
+    -e "MOCK_INFERENCE_DELAY_MS=${LAB_PHASE03_MOCK_DELAY_MS:-0}" \
+    -e "MOCK_TASK_ID=${eval_task_id:-}" \
+    "$mock_image" >/dev/null ||
+    fail "unable to start isolated fake provider" 3
+  attempts=0
+  until docker exec "$mock_container" node -e \
+    "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+  do
+    attempts=$((attempts + 1))
+    [ "$attempts" -lt 30 ] || fail "fake provider did not become healthy" 3
+    sleep 1
+  done
+  mock_base_url="http://mock-provider:8080"
+}
+
+run_evaluator() {
+  uid=$(id -u)
+  gid=$(id -g)
+  [ "$uid" -ne 0 ] || uid=10001
+  [ "$gid" -ne 0 ] || gid=10001
+  docker run --rm --network none --read-only --cap-drop ALL \
+    --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    -e LAB_CONTAINER_ROLE=evaluator -e "LAB_UID=$uid" -e "LAB_GID=$gid" \
+    "$@"
+}
+
+acquire_eval_lock() {
+  experiment_path=$1
+  eval_lock_invocation=$invocation_id
+  short_invocation=$(printf '%s' "$eval_lock_invocation" | tr -d '-' | cut -c1-12)
+  eval_lock_container="${compose_project}-eval-lock-${short_invocation}"
+  docker run --detach --name "$eval_lock_container" \
+    --label "io.downshift.invocation=$eval_lock_invocation" \
+    --label "io.downshift.experiment=$experiment_id" \
+    --read-only --network none --cap-drop ALL --security-opt no-new-privileges:true \
+    --entrypoint /bin/sleep "$agent_image" infinity >/dev/null ||
+    fail "unable to create experiment lock guard" 3
+  eval_lock_dir="$experiment_path/.writer-lock"
+  if ! mkdir "$eval_lock_dir" 2>/dev/null; then
+    old_invocation=$(sed -n '1p' "$eval_lock_dir/invocation" 2>/dev/null || :)
+    old_container=$(sed -n '1p' "$eval_lock_dir/container" 2>/dev/null || :)
+    old_running=false
+    old_label=
+    if [ -n "$old_container" ]; then
+      old_running=$(docker inspect --format '{{.State.Running}}' "$old_container" 2>/dev/null || :)
+      old_label=$(docker inspect \
+        --format '{{index .Config.Labels "io.downshift.invocation"}}' "$old_container" 2>/dev/null || :)
+    fi
+    if [ "$old_running" = "true" ] &&
+      [ -n "$old_invocation" ] &&
+      [ "$old_label" = "$old_invocation" ]; then
+      fail "experiment already has an active writer $old_invocation" 2
+    fi
+    rm -f "$eval_lock_dir/invocation" "$eval_lock_dir/container"
+    rmdir "$eval_lock_dir" 2>/dev/null ||
+      fail "stale experiment lock contains unexpected state" 3
+    mkdir "$eval_lock_dir" || fail "unable to reclaim stale experiment lock" 3
+  fi
+  printf '%s\n' "$eval_lock_invocation" >"$eval_lock_dir/invocation"
+  printf '%s\n' "$eval_lock_container" >"$eval_lock_dir/container"
+}
+
+eval_fixtures_command() {
+  fixture_suite=
+  fixture_corpus=core
+  fixture_output=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --suite) [ "$#" -ge 2 ] || usage; fixture_suite=$2; shift 2 ;;
+      --corpus) [ "$#" -ge 2 ] || usage; fixture_corpus=$2; shift 2 ;;
+      --output) [ "$#" -ge 2 ] || usage; fixture_output=$(canonical_directory "$2"); shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  case "$fixture_suite" in smoke|dev|heldout|full) ;; *) usage ;; esac
+  case "$fixture_corpus" in core|harness|combined) ;; *) usage ;; esac
+  evaluator_image=$(image_for evaluator)
+  task_ids=$(run_evaluator "$evaluator_image" node /app/dist/evaluation/smoke-cli.js task-ids "$fixture_suite" "$fixture_corpus") || fail "cannot load corpus" 2
+  eval_temp=$(mktemp -d "${TMPDIR:-/tmp}/routing-lab-fixtures.XXXXXX")
+  for task_id in $task_ids; do
+    output="${fixture_output:-$eval_temp}/$task_id"
+    mkdir "$output"
+    run_evaluator -v "$output:/output" "$evaluator_image" \
+      node /app/dist/evaluation/cli.js verify-reference "$task_id" /output >/dev/null
+    printf 'route-agent: fixture %s baseline=FAIL reference=PASS incomplete=FAIL\n' "$task_id"
+  done
+  rm -rf "$eval_temp"
+  eval_temp=
+}
+
+eval_config_summary() {
+  config_path=$1
+  auth_profile=$2
+  use_mock=$3
+  if [ "$use_mock" = "1" ]; then
+    run_setup_helper --config-check "$config_path" "$auth_profile" probe
+    docker rm -f "$mock_container" >/dev/null 2>&1 || true
+    docker network rm "$network_name" >/dev/null 2>&1 || true
+    docker volume rm "$ephemeral_auth_volume" >/dev/null 2>&1 || true
+    mock_container=
+    network_name=
+    ephemeral_auth_volume=
+  else
+    run_setup_helper --config-check "$config_path" "$auth_profile" none
+  fi
+}
+
+eval_job_value() {
+  key=$1
+  printf '%s\n' "$job_output" | sed -n "s/^$key://p"
+}
+
+eval_run_trial() {
+  experiment_path=$1
+  config_path=$2
+  auth_profile=$3
+  use_mock=$4
+  evidence_kind=$5
+
+  eval_task_id=$(eval_job_value task-id)
+  eval_mode=$(eval_job_value mode)
+  eval_attempt_id=$(eval_job_value attempt-id)
+  eval_repetition=$(eval_job_value repetition)
+  eval_previous_attempt_id=$(eval_job_value previous-attempt-id)
+  eval_task_hash=$(eval_job_value task-hash)
+  eval_source_hash=$(eval_job_value source-hash)
+  eval_validator_hash=$(eval_job_value validator-hash)
+  prompt_base64=$(eval_job_value prompt-base64)
+  [ -n "$eval_task_id" ] &&
+    [ -n "$eval_mode" ] &&
+    [ -n "$eval_attempt_id" ] &&
+    [ -n "$eval_repetition" ] ||
+    fail "evaluation job helper returned incomplete data" 3
+  prompt=$(printf '%s' "$prompt_base64" | base64 -d) ||
+    fail "evaluation job prompt was invalid" 3
+
+  eval_trial_temp=$(mktemp -d "$eval_temp/trial.XXXXXX")
+  workspace="$eval_trial_temp/workspace"
+  mkdir "$workspace"
+  run_evaluator -v "$workspace:/trial" "$evaluator_image" \
+    node /app/dist/evaluation/cli.js materialize "$eval_task_id" /trial >/dev/null ||
+    fail "task materialization failed for $eval_attempt_id" 3
+
+  short_attempt=$(eval_job_value storage-key)
+  [ -n "$short_attempt" ] || fail "job storage identity missing" 3
+  eval_state_volume="${compose_project}-eval-state-${short_attempt}"
+  eval_dependency_volume="${compose_project}-eval-deps-${short_attempt}"
+  eval_cache_volume="${compose_project}-eval-cache-${short_attempt}"
+  docker volume create "$eval_state_volume" >/dev/null
+  docker volume create "$eval_dependency_volume" >/dev/null
+  docker volume create "$eval_cache_volume" >/dev/null
+  if [ "$use_mock" = "1" ]; then
+    eval_auth_volume="${compose_project}-eval-auth-${short_attempt}"
+    docker volume create "$eval_auth_volume" >/dev/null
+  else
+    eval_auth_volume=
+  fi
+
+  prepare_container="${compose_project}-eval-prepare-${short_attempt}"
+  uid=$(id -u)
+  gid=$(id -g)
+  [ "$uid" -ne 0 ] || uid=10001
+  [ "$gid" -ne 0 ] || gid=10001
+  docker run --rm --name "$prepare_container" \
+    --read-only --cap-drop ALL \
+    --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    -e LAB_CONTAINER_ROLE=project-helper \
+    -e "LAB_UID=$uid" -e "LAB_GID=$gid" -e "LAB_PROJECT_ID=$eval_source_hash" \
+    -v "$workspace:/workspace" \
+    -v "$eval_dependency_volume:/workspace/node_modules" \
+    -v "$eval_cache_volume:/package-cache" \
+    "$agent_image" node /app/dist/launcher/container-cli.js prepare >/dev/null ||
+    fail "evaluation dependency setup failed for $eval_attempt_id" 3
+
+  if [ "$use_mock" = "1" ]; then
+    invocation_id=$short_attempt
+    start_mock
+    eval_mock_container=$mock_container
+    eval_network=$network_name
+    mock_container=
+    network_name=
+    auth_volume=$eval_auth_volume
+  else
+    auth_volume="${compose_project}-auth-${auth_profile}"
+    mock_base_url=
+  fi
+  eval_agent_container="${compose_project}-eval-agent-${short_attempt}"
+  eval_artifact_scratch="$eval_trial_temp/agent-output"
+  eval_attempt_path="$experiment_path/attempts/$eval_attempt_id"
+  mkdir -p "$eval_artifact_scratch" "$eval_attempt_path"
+  agent_image_id=$(docker image inspect --format '{{.Id}}' "$agent_image")
+  lab_revision=$(git -C "$root" rev-parse HEAD 2>/dev/null || :)
+  if [ -n "$(git -C "$root" status --porcelain 2>/dev/null || :)" ]; then
+    lab_dirty=true
+  else
+    lab_dirty=false
+  fi
+
+  set -- docker run --rm --name "$eval_agent_container" \
+    --label "io.downshift.experiment=$experiment_id" \
+    --label "io.downshift.attempt=$eval_attempt_id" \
+    --read-only --cap-drop ALL \
+    --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    -e LAB_CONTAINER_ROLE=agent \
+    -e "LAB_UID=$uid" -e "LAB_GID=$gid" \
+    -e "LAB_PROJECT_ID=$eval_source_hash" -e "LAB_INVOCATION_ID=$eval_attempt_id" \
+    -e "LAB_REVISION=$lab_revision" -e "LAB_DIRTY=$lab_dirty" \
+    -e "LAB_AGENT_IMAGE_ID=$agent_image_id" \
+    -e "LAB_AUTH_PROFILE=$auth_profile" -e LAB_CONFIG_PATH=/lab-config.json \
+    -e "LAB_MODE=$eval_mode" -e LAB_ARTIFACT_ROOT=/results \
+    -e LAB_ARTIFACT_COLLECTION=attempts -e "LAB_EXPERIMENT_ID=$experiment_id" \
+    -e "LAB_TASK_ID=$eval_task_id" -e "LAB_REPETITION=$eval_repetition" \
+    -e "LAB_PREVIOUS_ATTEMPT_ID=$eval_previous_attempt_id" \
+    -e "LAB_TASK_HASH=$eval_task_hash" -e "LAB_SOURCE_HASH=$eval_source_hash" \
+    -e "LAB_VALIDATOR_HASH=$eval_validator_hash" \
+    -e SWITCHYARD_BRIDGE=/usr/local/bin/switchyard-bridge \
+    -v "$config_path:/lab-config.json:ro" \
+    -v "$workspace:/workspace" \
+    -v "$eval_dependency_volume:/workspace/node_modules" \
+    -v "$eval_cache_volume:/package-cache" \
+    -v "$eval_state_volume:/project-state" \
+    -v "$auth_volume:/pi-profile" \
+    -v "$eval_artifact_scratch:/results"
+  if [ "$use_mock" = "1" ]; then
+    set -- "$@" --network "$eval_network" -e "LAB_MOCK_BASE_URL=$mock_base_url"
+  fi
+  set -- "$@" "$agent_image" node /app/dist/container/agent.js --scripted --prompt "$prompt"
+  set +e
+  "$@"
+  agent_exit=$?
+  set -e
+
+  collect_eval_artifacts || fail "unable to collect stopped agent evidence" 3
+  if [ "$use_mock" = "1" ]; then
+    docker exec "$eval_mock_container" node -e "fetch('http://127.0.0.1:8080/admin/ledger').then(r=>r.json()).then(v=>console.log(JSON.stringify(v)))" >"$eval_attempt_path/provider-ledger.json" || fail "provider ledger collection failed" 3
+  fi
+
+  attempt_path="$experiment_path/attempts/$eval_attempt_id"
+  [ -f "$attempt_path/run.json" ] || {
+    cleanup_eval_trial
+    printf 'route-agent: attempt %s was interrupted before finalization (exit %s)\n' \
+      "$eval_attempt_id" "$agent_exit" >&2
+    return 3
+  }
+  attempt_output=$(run_evaluator \
+    -v "$attempt_path:/attempt:ro" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js attempt /attempt) ||
+    fail "unable to inspect attempt $eval_attempt_id" 3
+  execution_status=$(printf '%s\n' "$attempt_output" | sed -n 's/^execution-status://p')
+  if [ "$execution_status" != "completed" ] && [ "$execution_status" != "timeout" ] && [ "$execution_status" != "budget-exhausted" ]; then
+    printf 'route-agent: attempt %s stopped with infrastructure status %s\n' \
+      "$eval_attempt_id" "$execution_status" >&2
+    cleanup_eval_trial
+    return 3
+  fi
+  run_evaluator \
+    -v "$workspace:/trial:ro" \
+    -v "$attempt_path:/attempt" \
+    "$evaluator_image" node /app/dist/evaluation/cli.js \
+    export "$eval_task_id" /trial /attempt >/dev/null ||
+    fail "submission export failed for $eval_attempt_id" 3
+  set +e
+  run_evaluator \
+    -v "$attempt_path:/attempt" \
+    "$evaluator_image" node /app/dist/evaluation/cli.js \
+    validate "$eval_task_id" /attempt/submission.json /attempt/validation /attempt >/dev/null
+  validation_exit=$?
+  set -e
+  [ "$validation_exit" -eq 0 ] || [ "$validation_exit" -eq 1 ] || {
+    cleanup_eval_trial
+    fail "independent validation errored for $eval_attempt_id" 3
+  }
+  printf 'route-agent: trial %s mode=%s validation=%s\n' \
+    "$eval_task_id" "$eval_mode" "$([ "$validation_exit" -eq 0 ] && printf PASS || printf FAIL)"
+  cleanup_eval_trial
+}
+
+eval_plan_command() {
+  corpus=core
+  projection=
+  suite=
+  live=0
+  repetitions=
+  seed=20260905
+  config=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --corpus) [ "$#" -ge 2 ] || usage; corpus=$2; shift 2 ;;
+      --from-dev) [ "$#" -ge 2 ] || usage; projection=$(canonical_directory "$2"); shift 2 ;;
+      --suite) [ "$#" -ge 2 ] || usage; suite=$2; shift 2 ;;
+      --live) live=1; shift ;;
+      --repetitions) [ "$#" -ge 2 ] || usage; repetitions=$2; shift 2 ;;
+      --seed) [ "$#" -ge 2 ] || usage; seed=$2; shift 2 ;;
+      --config) [ "$#" -ge 2 ] || usage; config=$2; shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  case "$suite" in smoke|dev|heldout|full) ;; *) usage ;; esac
+  if [ -z "$repetitions" ]; then
+    if [ "$suite" = "smoke" ]; then repetitions=1
+    else repetitions=3; fi
+  fi
+  case "$repetitions" in ""|*[!0-9]*) usage ;; esac
+  case "$seed" in ""|*[!0-9]*) usage ;; esac
+  [ -n "$config" ] || {
+    if [ "$live" = "1" ]; then config="$root/config/lab.local.json"
+    else config="$root/config/lab.mock.json"; fi
+  }
+  config=$(canonical_file "$config")
+  agent_image=$(image_for agent)
+  evaluator_image=$(image_for evaluator)
+  compose_project=$(compose_name)
+  auth_profile=$(config_profile_from_file "$config")
+  eval_temp=$(mktemp -d "${TMPDIR:-/tmp}/routing-lab-plan.XXXXXX")
+  config_summary_path="$eval_temp/config-check.json"
+  if [ "$live" = "1" ]; then
+    run_setup_helper --config-check "$config" "$auth_profile" none >"$config_summary_path"
+  else
+    mock_config=$(canonical_file "$root/config/lab.mock.json")
+    [ "$config" = "$mock_config" ] ||
+      fail "mock evaluation requires config/lab.mock.json; use --live for credentialed providers"
+    run_setup_helper --config-check "$config" "$auth_profile" static >"$config_summary_path"
+  fi
+  set -- -v "$config:/config.json:ro"
+  [ -z "$projection" ] || set -- "$@" -v "$projection:/development:ro"
+  run_evaluator "$@" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js plan \
+    /config.json "$suite" "$repetitions" "$seed" "$corpus" "$([ -n "$projection" ] && printf /development || printf -- -)" ||
+    fail "unable to create evaluation plan for suite $suite" 2
+  rm -rf "$eval_temp"
+  eval_temp=
+}
+
+eval_validate_existing() {
+  attempt_path="$1/attempts/$eval_attempt_id"
+  set +e
+  run_evaluator \
+    -v "$attempt_path:/attempt" \
+    "$evaluator_image" node /app/dist/evaluation/cli.js \
+    validate "$eval_task_id" /attempt/submission.json /attempt/validation /attempt >/dev/null
+  validation_exit=$?
+  set -e
+  [ "$validation_exit" -eq 0 ] || [ "$validation_exit" -eq 1 ] ||
+    return 3
+  printf 'route-agent: resumed validation %s mode=%s validation=%s\n' \
+    "$eval_task_id" "$eval_mode" \
+    "$([ "$validation_exit" -eq 0 ] && printf PASS || printf FAIL)"
+}
+
+eval_execute_schedule() {
+  completed_count=0
+  while :; do
+    job_output=$(run_evaluator \
+      -v "$experiment_path:/experiment:ro" \
+      "$evaluator_image" node /app/dist/evaluation/smoke-cli.js next /experiment) ||
+      return 3
+    action=$(eval_job_value action)
+    [ "$action" != "done" ] || break
+    eval_task_id=$(eval_job_value task-id)
+    eval_mode=$(eval_job_value mode)
+    eval_attempt_id=$(eval_job_value attempt-id)
+    if [ "$action" = "validate" ]; then
+      eval_validate_existing "$experiment_path" || return 3
+    elif [ "$action" = "run" ]; then
+      eval_run_trial "$experiment_path" "$config" "$auth_profile" "$use_mock" "$evidence_kind" ||
+        return 3
+    else
+      fail "evaluation controller returned invalid action '$action'" 3
+    fi
+    completed_count=$((completed_count + 1))
+    if [ "${LAB_PHASE09_PAUSE_AFTER_TRIALS:-0}" -gt 0 ] 2>/dev/null; then
+      sleep "$LAB_PHASE09_PAUSE_AFTER_TRIALS"
+    fi
+  done
+  set +e
+  run_evaluator -v "$experiment_path:/experiment" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js status /experiment
+  status=$?
+  set -e
+  printf 'route-agent: report %s\n' "$experiment_path"
+  return "$status"
+}
+
+eval_run_command() {
+  corpus=core
+  suite=
+  live=0
+  config=
+  auth_profile=
+  repetitions=
+  seed=20260905
+  max_cost=-
+  policy=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --corpus) [ "$#" -ge 2 ] || usage; corpus=$2; shift 2 ;;
+      --suite) [ "$#" -ge 2 ] || usage; suite=$2; shift 2 ;;
+      --live) live=1; shift ;;
+      --config) [ "$#" -ge 2 ] || usage; config=$2; shift 2 ;;
+      --auth-profile) [ "$#" -ge 2 ] || usage; auth_profile=$2; shift 2 ;;
+      --repetitions) [ "$#" -ge 2 ] || usage; repetitions=$2; shift 2 ;;
+      --seed) [ "$#" -ge 2 ] || usage; seed=$2; shift 2 ;;
+      --max-cost-usd) [ "$#" -ge 2 ] || usage; max_cost=$2; shift 2 ;;
+      --policy) [ "$#" -ge 2 ] || usage; policy=$2; shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  case "$suite" in smoke|dev|heldout|full) ;; *) usage ;; esac
+  case "$corpus" in core|harness|combined) ;; *) usage ;; esac
+  if [ "$suite" = "heldout" ] || [ "$suite" = "full" ]; then
+    [ -n "$policy" ] || fail "$suite execution requires a frozen development policy"
+  elif [ -n "$policy" ]; then
+    fail "--policy is only valid with --suite heldout or --suite full"
+  fi
+  if [ -z "$repetitions" ]; then
+    if [ "$suite" = "smoke" ]; then repetitions=1
+    else repetitions=3; fi
+  fi
+  case "$repetitions" in ""|*[!0-9]*) usage ;; esac
+  case "$seed" in ""|*[!0-9]*) usage ;; esac
+  [ -n "$config" ] || {
+    if [ "$live" = "1" ]; then config="$root/config/lab.local.json"
+    else config="$root/config/lab.mock.json"; fi
+  }
+  config=$(canonical_file "$config")
+  [ -z "$policy" ] || policy=$(canonical_file "$policy")
+  mock_config=$(canonical_file "$root/config/lab.mock.json")
+  use_mock=0
+  evidence_kind=live
+  if [ "$live" = "0" ]; then
+    [ "$config" = "$mock_config" ] ||
+      fail "mock evaluation requires config/lab.mock.json; use --live for credentialed providers"
+    use_mock=1
+    evidence_kind=mock
+  fi
+  agent_image=$(image_for agent)
+  evaluator_image=$(image_for evaluator)
+  mock_image=$(image_for mock)
+  compose_project=$(compose_name)
+  [ -n "$auth_profile" ] || auth_profile=$(config_profile_from_file "$config")
+  validate_profile "$auth_profile"
+  if [ "$use_mock" = "1" ] && [ "$auth_profile" != "mock" ]; then
+    fail "mock evaluation requires the ephemeral mock auth profile"
+  fi
+  if [ "$max_cost" != "-" ]; then
+    run_evaluator -v "$config:/config.json:ro" "$evaluator_image" \
+      node /app/dist/evaluation/smoke-cli.js budget-check /config.json "$max_cost" >/dev/null ||
+      fail "monetary limit requires bounded per-token billing and sufficient prices" 2
+  fi
+
+  eval_temp=$(mktemp -d "${TMPDIR:-/tmp}/routing-lab-eval.XXXXXX")
+  config_summary_path="$eval_temp/config-check.json"
+  eval_config_summary "$config" "$auth_profile" "$use_mock" >"$config_summary_path"
+  if [ "$evidence_kind" = "mock" ]; then use_mock=1; else use_mock=0; fi
+  evaluation_source=$(current_source_hash) || fail "unable to hash source inputs" 3
+  agent_image_id=$(docker image inspect --format '{{.Id}}' "$agent_image")
+  evaluator_image_id=$(docker image inspect --format '{{.Id}}' "$evaluator_image")
+  verification_source=$evaluation_source
+  verify_source_images || fail "runtime images do not match source; run ./route-agent build" 2
+  if [ -n "$policy" ]; then
+    run_evaluator \
+      -v "$policy:/policy.json:ro" \
+      -v "$config:/config.json:ro" \
+      -v "$config_summary_path:/config-check.json:ro" \
+      "$evaluator_image" node /app/dist/evaluation/smoke-cli.js verify-policy \
+      /policy.json /config.json /config-check.json "$corpus" "$suite" "$repetitions" "$seed" "$evidence_kind" "$evaluation_source" "$agent_image_id" "$evaluator_image_id" "$max_cost" >/dev/null ||
+      fail "heldout policy fingerprint check failed before provider calls" 2
+  fi
+  new_invocation
+  experiment_id="$suite-$invocation_id"
+  results_root="$root/results"
+  mkdir -p "$results_root"
+  agent_image_id=$(docker image inspect --format '{{.Id}}' "$agent_image")
+  evaluator_image_id=$(docker image inspect --format '{{.Id}}' "$evaluator_image")
+  mock_image_id=$(docker image inspect --format '{{.Id}}' "$mock_image")
+  lab_revision=$(git -C "$root" rev-parse HEAD 2>/dev/null || :)
+  [ -n "$lab_revision" ] || lab_revision=-
+  if [ -n "$(git -C "$root" status --porcelain 2>/dev/null || :)" ]; then
+    lab_dirty=true
+  else
+    lab_dirty=false
+  fi
+  set --
+  [ -z "$policy" ] || set -- -v "$policy:/policy.json:ro"
+  create_output=$(run_evaluator "$@" \
+    -v "$results_root:/results" \
+    -v "$config:/config.json:ro" \
+    -v "$config_summary_path:/config-check.json:ro" \
+    -v "$root/pnpm-lock.yaml:/locks/pnpm-lock.yaml:ro" \
+    -v "$root/rust/switchyard-bridge/Cargo.lock:/locks/Cargo.lock:ro" \
+    "$evaluator_image" node /app/dist/evaluation/smoke-cli.js create \
+    /results /config.json /config-check.json "$experiment_id" "$evidence_kind" "$seed" \
+    "$lab_revision" "$lab_dirty" "$agent_image_id" "$evaluator_image_id" \
+    "$([ "$use_mock" = "1" ] && printf '%s' "$mock_image_id" || printf -- -)" \
+    "$repetitions" "$max_cost" /locks/pnpm-lock.yaml /locks/Cargo.lock "$suite" "$corpus" "$evaluation_source" "$([ -n "$policy" ] && printf /policy.json || printf -- -)") ||
+    fail "unable to create evaluation manifest" 3
+  printf '%s\n' "$create_output" | sed 's#experiment-directory:/results/#experiment-directory:results/#'
+  experiment_path="$results_root/$experiment_id"
+  acquire_eval_lock "$experiment_path"
+  if eval_execute_schedule; then status=0; else status=$?; fi
+  cleanup_eval_lock
+  rm -rf "$eval_temp"
+  eval_temp=
+  return "$status"
+}
+
+eval_resume_command() {
+  [ "${1:-}" = "--experiment" ] && [ "$#" -ge 2 ] || usage
+  experiment_path=$(canonical_directory "$2")
+  shift 2
+  live=0
+  config=
+  auth_profile=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --live) live=1; shift ;;
+      --config) [ "$#" -ge 2 ] || usage; config=$(canonical_file "$2"); shift 2 ;;
+      --auth-profile) [ "$#" -ge 2 ] || usage; auth_profile=$2; shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  if [ "$live" = "1" ]; then
+    evidence_kind=live
+    use_mock=0
+  else
+    evidence_kind=mock
+    use_mock=1
+  fi
+  agent_image=$(image_for agent)
+  evaluator_image=$(image_for evaluator)
+  mock_image=$(image_for mock)
+  compose_project=$(compose_name)
+  eval_temp=$(mktemp -d "${TMPDIR:-/tmp}/routing-lab-resume.XXXXXX")
+  resume_metadata=$(run_evaluator \
+    -v "$experiment_path:/experiment:ro" -v "$eval_temp:/output" \
+    "$evaluator_image" node /app/dist/evaluation/smoke-cli.js resume-config \
+    /experiment/manifest.json /output/config.json "$evidence_kind") ||
+    fail "unable to restore experiment configuration; live experiments require --live" 2
+  [ -n "$config" ] || config="$eval_temp/config.json"
+  [ -n "$auth_profile" ] || auth_profile=$(printf '%s\n' "$resume_metadata" | sed -n 's/^auth-profile://p')
+  validate_profile "$auth_profile"
+  new_invocation
+  experiment_id=$(basename -- "$experiment_path")
+  acquire_eval_lock "$experiment_path"
+  config_summary_path="$eval_temp/config-check.json"
+  eval_config_summary "$config" "$auth_profile" "$use_mock" >"$config_summary_path"
+  if [ "$evidence_kind" = "mock" ]; then use_mock=1; else use_mock=0; fi
+  agent_image_id=$(docker image inspect --format '{{.Id}}' "$agent_image")
+  evaluator_image_id=$(docker image inspect --format '{{.Id}}' "$evaluator_image")
+  mock_image_id=$(docker image inspect --format '{{.Id}}' "$mock_image")
+  evaluation_source=$(current_source_hash) || fail "unable to hash resume source" 3
+  verification_source=$evaluation_source
+  verify_source_images || fail "runtime images do not match source; run ./route-agent build" 2
+  run_evaluator \
+    -v "$experiment_path:/experiment:ro" \
+    -v "$config:/config.json:ro" \
+    -v "$config_summary_path:/config-check.json:ro" \
+    -v "$root/pnpm-lock.yaml:/locks/pnpm-lock.yaml:ro" \
+    -v "$root/rust/switchyard-bridge/Cargo.lock:/locks/Cargo.lock:ro" \
+    "$evaluator_image" node /app/dist/evaluation/smoke-cli.js verify-resume \
+    /experiment /config.json /config-check.json "$evidence_kind" \
+    "$agent_image_id" "$evaluator_image_id" \
+    "$([ "$use_mock" = "1" ] && printf '%s' "$mock_image_id" || printf -- -)" \
+    /locks/pnpm-lock.yaml /locks/Cargo.lock "$evaluation_source" >/dev/null ||
+    fail "experiment resume compatibility check failed before provider calls" 2
+  if eval_execute_schedule; then status=0; else status=$?; fi
+  cleanup_eval_lock
+  rm -rf "$eval_temp"
+  eval_temp=
+  return "$status"
+}
+
+current_source_hash() {
+  run_evaluator -v "$root:/source:ro" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js source-hash /source
+}
+
+verify_source_images() {
+  for check_image in "$agent_image" "$evaluator_image" "$(image_for mock)"; do
+    image_source=$(docker run --rm --entrypoint cat "$check_image" /app/source-content.sha256) || return 1
+    [ "$image_source" = "$verification_source" ] || {
+      printf 'Image %s does not match current source; run ./route-agent build\n' "$check_image" >&2
+      return 1
+    }
+  done
+  printf 'Current source matches all runtime images\n'
+}
+
+verification_step() {
+  verification_check=$1
+  shift
+  set +e
+  "$@" >"$verification_path/$verification_check.log" 2>&1
+  verification_code=$?
+  set -e
+  run_evaluator -v "$verification_path:/verification" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js verify-record /verification "$verification_check" "$verification_code" || return 3
+  verification_expected=0
+  [ "$verification_check" != mock-smoke ] || verification_expected=1
+  [ "$verification_code" -eq "$verification_expected" ] || verification_failed=1
+  return 0
+}
+
+eval_verify_command() {
+  verification_level=quick
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --level) [ "$#" -ge 2 ] || usage; verification_level=$2; shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  case "$verification_level" in quick|full) ;; *) usage ;; esac
+  agent_image=$(image_for agent)
+  evaluator_image=$(image_for evaluator)
+  verification_source=$(current_source_hash) || fail "unable to fingerprint verification source" 3
+  new_invocation
+  verification_path="$root/results/verify-$invocation_id"
+  mkdir -p "$verification_path"
+  verification_failed=0
+  run_evaluator -v "$verification_path:/verification" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js verify-init /verification "$verification_level" "$verification_source" \
+    "$(docker image inspect --format '{{.Id}}' "$agent_image")" \
+    "$(docker image inspect --format '{{.Id}}' "$evaluator_image")" \
+    "$(docker image inspect --format '{{.Id}}' "$(image_for mock)")" "$(uname -s)/$(uname -m)" "${verification_path##*/}" || fail "cannot initialize verification" 3
+  printf 'verification-directory:%s\n' "$verification_path"
+  verification_step source-images verify_source_images
+  [ "$verification_failed" -eq 0 ] || return 1
+  verification_step contracts "$root/route-agent" dev -- pnpm test:contracts
+  verification_step mock-smoke "$root/route-agent" eval run --suite smoke
+  verification_smoke=$(sed -n 's/^experiment-directory:\(results\/[^[:space:]]*\)$/\1/p' "$verification_path/mock-smoke.log" | sed -n '1p')
+  if [ -n "$verification_smoke" ]; then
+    verification_step mock-ledger run_evaluator -v "$root/$verification_smoke:/experiment:ro" "$evaluator_image" \
+      node /app/dist/evaluation/smoke-cli.js verify-ledger /experiment
+  else
+    verification_step mock-ledger false
+  fi
+  if [ "$verification_level" = full ]; then
+    verification_step all-tests "$root/route-agent" dev -- pnpm test
+    verification_step typecheck "$root/route-agent" dev -- pnpm typecheck
+    verification_step documentation "$root/route-agent" dev -- pnpm check:docs
+    mkdir "$verification_path/fixtures"
+    verification_step fixtures "$root/route-agent" eval fixtures --suite full --corpus combined --output "$verification_path/fixtures"
+    verification_step host-integration sh "$root/tests/host/release-smoke.sh"
+  fi
+  printf 'route-agent: verification report %s/verification.md\n' "$verification_path"
+  return "$verification_failed"
+}
+
+eval_assess_command() {
+  assessment_experiment=
+  assessment_verification=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --experiment) [ "$#" -ge 2 ] || usage; assessment_experiment=$(canonical_directory "$2"); shift 2 ;;
+      --verification) [ "$#" -ge 2 ] || usage; assessment_verification=$(canonical_directory "$2"); shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  [ -n "$assessment_experiment" ] && [ -n "$assessment_verification" ] || usage
+  evaluator_image=$(image_for evaluator)
+  set +e
+  run_evaluator -v "$assessment_experiment:/experiment" -v "$assessment_verification:/verification:ro" \
+    "$evaluator_image" node /app/dist/evaluation/smoke-cli.js assess /experiment /verification
+  assessment_code=$?
+  set -e
+  printf 'route-agent: assessment report %s/readiness.md\n' "$assessment_experiment"
+  return "$assessment_code"
+}
+
+eval_probe_routing_command() {
+  probe_experiment=
+  probe_live=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --experiment) [ "$#" -ge 2 ] || usage; probe_experiment=$(canonical_directory "$2"); shift 2 ;;
+      --live) probe_live=1; shift ;;
+      *) usage ;;
+    esac
+  done
+  [ -n "$probe_experiment" ] || usage
+  # Invocation IDs are generated by the agent image, even though the probe's
+  # planning and report generation run in the evaluator image.
+  agent_image=$(image_for agent)
+  evaluator_image=$(image_for evaluator)
+  new_invocation
+  probe_output="$root/results/probe-$invocation_id"
+  mkdir -p "$probe_output"
+  probe_evidence=mock
+  [ "$probe_live" -eq 0 ] || probe_evidence=live
+  probe_metadata=$(run_evaluator -v "$probe_experiment:/experiment:ro" -v "$probe_output:/output" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js probe-plan /experiment /output "$probe_evidence") || fail "routing probe requires compatible completed development evidence" 2
+  probe_profile=$(printf '%s\n' "$probe_metadata" | sed -n 's/^auth-profile://p')
+  probe_mode=probe
+  [ "$probe_live" -eq 0 ] || probe_mode=none
+  printf 'probe-directory:%s\n%s\n' "$probe_output" "$probe_metadata"
+  set +e
+  run_setup_helper --probe-routing "$probe_output/config.json" "$probe_profile" "$probe_mode" \
+    <"$probe_output/probe-plan.json" >"$probe_output/samples.jsonl" 2>"$probe_output/provider.stderr.txt"
+  probe_code=$?
+  set -e
+  run_evaluator -v "$probe_output:/probe" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js probe-report /probe "$probe_code" || fail "could not finalize routing probe" 3
+  printf 'route-agent: classifier diagnostic %s/routing-probe.md\n' "$probe_output"
+  return "$probe_code"
+}
+
+eval_command() {
+  command=${1:-}
+  [ "$#" -gt 0 ] && shift || true
+  case "$command" in
+    verify) eval_verify_command "$@" ;;
+    assess) eval_assess_command "$@" ;;
+    probe-routing) eval_probe_routing_command "$@" ;;
+    fixtures) eval_fixtures_command "$@" ;;
+    plan) eval_plan_command "$@" ;;
+    run) eval_run_command "$@" ;;
+    resume) eval_resume_command "$@" ;;
+    freeze) eval_freeze_command "$@" ;;
+    *) usage ;;
+  esac
+}
+
+eval_freeze_command() {
+  experiment=
+  threshold=
+  benchmark_profile=-
+  prior_exposure=-
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --experiment) [ "$#" -ge 2 ] || usage; experiment=$(canonical_directory "$2"); shift 2 ;;
+      --threshold) [ "$#" -ge 2 ] || usage; threshold=$2; shift 2 ;;
+      --benchmark-profile) [ "$#" -ge 2 ] || usage; benchmark_profile=$2; shift 2 ;;
+      --prior-exposure) [ "$#" -ge 2 ] || usage; prior_exposure=$2; shift 2 ;;
+      *) usage ;;
+    esac
+  done
+  [ -n "$experiment" ] && [ -n "$threshold" ] || usage
+  evaluator_image=$(image_for evaluator)
+  run_evaluator -v "$experiment:/experiment" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js freeze /experiment "$threshold" "$benchmark_profile" "$prior_exposure"
+  printf 'route-agent: froze immutable policy at %s/policy.json\n' "$experiment"
+}
+
+report_command() {
+  [ "${1:-}" = "--experiment" ] && [ "$#" -eq 2 ] || usage
+  experiment=$(canonical_directory "$2")
+  evaluator_image=$(image_for evaluator)
+  run_evaluator -v "$experiment:/experiment" "$evaluator_image" \
+    node /app/dist/evaluation/smoke-cli.js report /experiment
+  printf 'route-agent: regenerated %s/experiment.json and %s/experiment.md\n' \
+    "$experiment" "$experiment"
+}
+
+analyze_command() {
+  [ "${1:-}" = "thresholds" ] && [ "${2:-}" = "--experiment" ] &&
+    [ "${4:-}" = "--split" ] && [ "$#" -eq 5 ] || usage
+  [ "$5" = "dev" ] || fail "threshold replay is development-only and requires --split dev"
+  experiment=$(canonical_directory "$3")
+  output="$experiment-threshold-replay"
+  mkdir -p "$output"
+  evaluator_image=$(image_for evaluator)
+  run_evaluator \
+    -v "$experiment:/experiment:ro" \
+    -v "$output:/output" \
+    "$evaluator_image" node /app/dist/evaluation/smoke-cli.js \
+    thresholds /experiment dev /output
+  printf 'route-agent: wrote replay evidence to %s\n' "$output"
+}
+
+run_project() {
+  project_path=$1
+  auth_profile=$2
+  config_path=$3
+  mode=$4
+  resume=$5
+  prompt_set=$6
+  prompt=$7
+  use_mock=$8
+
+  agent_image=$(image_for agent)
+  agent_image_id=$(docker image inspect --format '{{.Id}}' "$agent_image") ||
+    fail "unable to inspect the agent image"
+  lab_revision=$(git -C "$root" rev-parse HEAD 2>/dev/null || :)
+  if [ -n "$(git -C "$root" status --porcelain 2>/dev/null || :)" ]; then
+    lab_dirty=true
+  else
+    lab_dirty=false
+  fi
+  compose_project=$(compose_name)
+  identity_for_project "$project_path"
+  acquire_project_lock
+
+  project_state="${compose_project}-project-${project_id}-state"
+  project_dependencies="${compose_project}-project-${project_id}-dependencies"
+  project_cache="${compose_project}-project-${project_id}-cache"
+  short_project=$(printf '%s' "$project_id" | cut -c1-12)
+  short_invocation=$(printf '%s' "$invocation_id" | tr -d '-' | cut -c1-8)
+  prepare_container="${compose_project}-prepare-${short_project}-${short_invocation}"
+
+  uid=$(id -u)
+  gid=$(id -g)
+  [ "$uid" -ne 0 ] || uid=10001
+  [ "$gid" -ne 0 ] || gid=10001
+
+  docker run --rm --name "$prepare_container" \
+    --label "io.downshift.invocation=$invocation_id" \
+    --label "io.downshift.project=$project_id" \
+    --read-only --cap-drop ALL \
+    --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    -e LAB_CONTAINER_ROLE=project-helper \
+    -e "LAB_UID=$uid" -e "LAB_GID=$gid" -e "LAB_PROJECT_ID=$project_id" \
+    -v "$project_path:/workspace" \
+    -v "$project_dependencies:/workspace/node_modules" \
+    -v "$project_cache:/package-cache" \
+    "$agent_image" node /app/dist/launcher/container-cli.js prepare ||
+    fail "project dependency setup failed; the host lockfile was not modified"
+
+  test_mode=0
+  if [ "${LAB_PHASE03_TEST:-0}" = "1" ] || [ "${LAB_PHASE05_TEST:-0}" = "1" ] ||
+    [ "${LAB_PHASE06_TEST:-0}" = "1" ]; then
+    test_mode=1
+  fi
+  if [ "$use_mock" = "1" ]; then
+    start_mock
+    if { [ "${LAB_PHASE03_PERSIST_MOCK_PROFILE:-0}" = "1" ] ||
+      [ "${LAB_PHASE05_PERSIST_MOCK_PROFILE:-0}" = "1" ] ||
+      [ "${LAB_PHASE12_MOCK_TUI:-0}" = "1" ]; }; then
+      auth_volume="${compose_project}-test-auth-${auth_profile}"
+    else
+      auth_volume="${compose_project}-mock-auth-${invocation_id}"
+      ephemeral_auth_volume=$auth_volume
+    fi
+  else
+    auth_volume="${compose_project}-auth-${auth_profile}"
+    mock_base_url=
+  fi
+  agent_container="${compose_project}-agent-${short_project}-${short_invocation}"
+  printf 'route-agent: project %s invocation %s\n' "$project_id" "$invocation_id"
+
+  set -- docker run --rm
+  if [ "$test_mode" != "1" ]; then
+    set -- "$@" -it
+  fi
+  set -- "$@" --name "$agent_container" \
+    --label "io.downshift.invocation=$invocation_id" \
+    --label "io.downshift.project=$project_id" \
+    --read-only --cap-drop ALL \
+    --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    -e LAB_CONTAINER_ROLE=agent \
+    -e "LAB_UID=$uid" -e "LAB_GID=$gid" \
+    -e "LAB_PROJECT_ID=$project_id" -e "LAB_INVOCATION_ID=$invocation_id" \
+    -e "LAB_REVISION=$lab_revision" -e "LAB_DIRTY=$lab_dirty" \
+    -e "LAB_AGENT_IMAGE_ID=$agent_image_id" \
+    -e "LAB_AUTH_PROFILE=$auth_profile" \
+    -e "LAB_CONFIG_PATH=/lab-config.json" \
+    -e "LAB_MODE=$mode" \
+    -e "SWITCHYARD_BRIDGE=${LAB_PHASE03_BRIDGE:-/usr/local/bin/switchyard-bridge}" \
+    -e "LAB_TEST_HOLD_SECONDS=${LAB_PHASE03_TEST_HOLD_SECONDS:-0}" \
+    -v "$config_path:/lab-config.json:ro" \
+    -v "$project_path:/workspace" \
+    -v "$project_dependencies:/workspace/node_modules" \
+    -v "$project_cache:/package-cache" \
+    -v "$project_state:/project-state" \
+    -v "$auth_volume:/pi-profile"
+  if [ "$use_mock" = "1" ]; then
+    set -- "$@" --network "$network_name" -e "LAB_MOCK_BASE_URL=$mock_base_url"
+  fi
+  [ -z "$resume" ] || set -- "$@" -e "LAB_RESUME_SESSION_ID=$resume"
+  set -- "$@" "$agent_image" node /app/dist/container/agent.js
+  if [ "$test_mode" = "1" ]; then
+    [ "$prompt_set" = "1" ] || fail "mock scripted run requires a prompt"
+    set -- "$@" --scripted --prompt "$prompt"
+  else
+    set -- "$@" --interactive
+    [ "$prompt_set" = "0" ] || set -- "$@" --prompt "$prompt"
+  fi
+  "$@"
+}
+
+auth_command() {
+  auth_profile=default
+  callback_port=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --auth-profile)
+        [ "$#" -ge 2 ] || usage
+        auth_profile=$2
+        shift 2
+        ;;
+      --callback-port)
+        [ "$#" -ge 2 ] || usage
+        callback_port=$2
+        shift 2
+        ;;
+      *) usage ;;
+    esac
+  done
+  validate_profile "$auth_profile"
+  [ -z "$callback_port" ] || validate_callback_port "$callback_port"
+  if [ "${LAB_PHASE03_TEST:-0}" != "1" ]; then
+    [ -t 0 ] && [ -t 1 ] ||
+      fail "auth requires an interactive terminal for Pi's native /login UI"
+  fi
+
+  agent_image=$(image_for agent)
+  compose_project=$(compose_name)
+  new_invocation
+  short_invocation=$(printf '%s' "$invocation_id" | tr -d '-' | cut -c1-8)
+  auth_state="${compose_project}-auth-setup-${auth_profile}"
+  if [ "${LAB_PHASE03_TEST:-0}" = "1" ] || [ "${LAB_PHASE12_MOCK_TUI:-0}" = "1" ]; then
+    start_mock
+    auth_volume="${compose_project}-test-auth-${auth_profile}"
+  else
+    auth_volume="${compose_project}-auth-${auth_profile}"
+    mock_base_url=
+  fi
+  agent_container="${compose_project}-auth-${short_invocation}"
+  uid=$(id -u)
+  gid=$(id -g)
+  [ "$uid" -ne 0 ] || uid=10001
+  [ "$gid" -ne 0 ] || gid=10001
+
+  set -- docker run --rm
+  if [ "${LAB_PHASE03_TEST:-0}" != "1" ]; then
+    set -- "$@" -it
+  fi
+  set -- "$@" --name "$agent_container" \
+    --label "io.downshift.invocation=$invocation_id" \
+    --read-only --cap-drop ALL \
+    --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    --tmpfs /workspace:rw,nosuid,nodev,mode=0755 \
+    -e LAB_CONTAINER_ROLE=agent \
+    -e LAB_AUTH_SETUP=1 \
+    -e "LAB_UID=$uid" -e "LAB_GID=$gid" \
+    -e LAB_PROJECT_ID=auth-setup -e "LAB_INVOCATION_ID=$invocation_id" \
+    -e "LAB_AUTH_PROFILE=$auth_profile" \
+    -v "$auth_volume:/pi-profile" \
+    -v "$auth_state:/project-state"
+  if [ -n "$callback_port" ]; then
+    set -- "$@" -p "127.0.0.1:$callback_port:$callback_port"
+  fi
+  if [ -n "$mock_base_url" ]; then
+    set -- "$@" --network "$network_name" -e "LAB_MOCK_BASE_URL=$mock_base_url"
+  fi
+  set -- "$@" "$agent_image" node /app/dist/container/agent.js
+  if [ "${LAB_PHASE03_TEST:-0}" = "1" ]; then
+    set -- "$@" --auth-test
+  else
+    printf "route-agent: use Pi's native /login or /logout, then /quit; credentials stay in profile '%s'\\n" \
+      "$auth_profile" >&2
+    set -- "$@" --auth
+  fi
+  "$@"
+}
+
+config_profile_from_file() {
+  config_path=$1
+  profile=$(docker run --rm --entrypoint node \
+    -v "$config_path:/lab-config.json:ro" \
+    "$agent_image" /app/dist/container/agent.js --config-profile --config /lab-config.json) ||
+    fail "unable to read the auth profile from the lab configuration"
+  validate_profile "$profile"
+  printf '%s\n' "$profile"
+}
+
+run_setup_helper() {
+  helper=$1
+  config_path=$2
+  auth_profile=$3
+  use_mock=$4
+  extra_one=${5:-}
+  extra_two=${6:-}
+
+  agent_image=$(image_for agent)
+  compose_project=$(compose_name)
+  new_invocation
+  short_invocation=$(printf '%s' "$invocation_id" | tr -d '-' | cut -c1-8)
+  agent_container="${compose_project}-setup-${short_invocation}"
+  uid=$(id -u)
+  gid=$(id -g)
+  [ "$uid" -ne 0 ] || uid=10001
+  [ "$gid" -ne 0 ] || gid=10001
+
+  if [ "$use_mock" = "probe" ]; then
+    start_mock
+    auth_volume="${compose_project}-mock-setup-${invocation_id}"
+    ephemeral_auth_volume=$auth_volume
+    mock_base=$mock_base_url
+  elif [ "$use_mock" = "static" ]; then
+    auth_volume="${compose_project}-mock-setup-${invocation_id}"
+    ephemeral_auth_volume=$auth_volume
+    mock_base=http://127.0.0.1:9
+  else
+    auth_volume="${compose_project}-auth-${auth_profile}"
+    mock_base=
+  fi
+
+  set -- docker run --rm --name "$agent_container" \
+    --label "io.downshift.invocation=$invocation_id" \
+    --read-only --cap-drop ALL \
+    --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --cap-add SETGID --cap-add SETUID \
+    --security-opt no-new-privileges:true \
+    --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+    --tmpfs /project-state:rw,nosuid,nodev,mode=0755 \
+    --tmpfs /workspace/node_modules:rw,nosuid,nodev,mode=0755 \
+    -e LAB_CONTAINER_ROLE=agent \
+    -e LAB_AUTH_SETUP=1 \
+    -e "LAB_UID=$uid" -e "LAB_GID=$gid" \
+    -e LAB_PROJECT_ID=setup -e "LAB_INVOCATION_ID=$invocation_id" \
+    -e "LAB_AUTH_PROFILE=$auth_profile" \
+    -v "$auth_volume:/pi-profile"
+  if [ -n "$config_path" ]; then
+    set -- "$@" -v "$config_path:/lab-config.json:ro"
+  fi
+  if [ -n "$mock_base" ]; then
+    set -- "$@" -e "LAB_MOCK_BASE_URL=$mock_base"
+  fi
+  if [ "$use_mock" = "probe" ]; then
+    set -- "$@" --network "$network_name"
+  fi
+  [ "$helper" != "--probe-routing" ] || set -- "$@" --interactive
+  if [ "$helper" = "--doctor" ]; then
+    set -- "$@" \
+      -e "LAB_HOST_DOCKER_VERSION=$(docker --version)" \
+      -e "LAB_HOST_COMPOSE_VERSION=$(docker compose version)"
+  fi
+  set -- "$@" "$agent_image" node /app/dist/container/agent.js "$helper"
+  [ -z "$config_path" ] || set -- "$@" --config /lab-config.json
+  [ -z "$extra_one" ] || set -- "$@" "$extra_one"
+  [ -z "$extra_two" ] || set -- "$@" "$extra_two"
+  "$@"
+}
+
+models_command() {
+  auth_profile=default
+  refresh=0
+  json=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --auth-profile)
+        [ "$#" -ge 2 ] || usage
+        auth_profile=$2
+        shift 2
+        ;;
+      --refresh)
+        refresh=1
+        shift
+        ;;
+      --json)
+        json=1
+        shift
+        ;;
+      *) usage ;;
+    esac
+  done
+  validate_profile "$auth_profile"
+  if [ "$refresh" = "1" ]; then
+    printf 'route-agent: refreshing Pi model catalogs may refresh credentials but does not run coding inference\n' >&2
+  fi
+  mock_mode=none
+  if [ "${LAB_PHASE04_TEST:-0}" = "1" ]; then
+    mock_mode=probe
+  fi
+  extra_one=
+  extra_two=
+  [ "$refresh" = "0" ] || extra_one=--refresh
+  if [ "$json" = "1" ]; then
+    if [ -z "$extra_one" ]; then
+      extra_one=--json
+    else
+      extra_two=--json
+    fi
+  fi
+  run_setup_helper --models "" "$auth_profile" "$mock_mode" "$extra_one" "$extra_two"
+}
+
+config_check_command() {
+  [ "${1:-}" = "check" ] || usage
+  shift
+  config="$root/config/lab.local.json"
+  auth_profile=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --config)
+        [ "$#" -ge 2 ] || usage
+        config=$2
+        shift 2
+        ;;
+      --auth-profile)
+        [ "$#" -ge 2 ] || usage
+        auth_profile=$2
+        shift 2
+        ;;
+      *) usage ;;
+    esac
+  done
+  config=$(canonical_file "$config")
+  agent_image=$(image_for agent)
+  [ -n "$auth_profile" ] || auth_profile=$(config_profile_from_file "$config")
+  validate_profile "$auth_profile"
+  mock_config=$(canonical_file "$root/config/lab.mock.json")
+  mock_mode=none
+  [ "$config" != "$mock_config" ] || mock_mode=static
+  run_setup_helper --config-check "$config" "$auth_profile" "$mock_mode"
+}
+
+doctor_command() {
+  config="$root/config/lab.local.json"
+  auth_profile=
+  probe=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --config)
+        [ "$#" -ge 2 ] || usage
+        config=$2
+        shift 2
+        ;;
+      --auth-profile)
+        [ "$#" -ge 2 ] || usage
+        auth_profile=$2
+        shift 2
+        ;;
+      --probe-models)
+        probe=1
+        shift
+        ;;
+      *) usage ;;
+    esac
+  done
+  config=$(canonical_file "$config")
+  agent_image=$(image_for agent)
+  [ -n "$auth_profile" ] || auth_profile=$(config_profile_from_file "$config")
+  validate_profile "$auth_profile"
+  mock_config=$(canonical_file "$root/config/lab.mock.json")
+  mock_mode=none
+  if [ "$config" = "$mock_config" ]; then
+    if [ "$probe" = "1" ]; then
+      mock_mode=probe
+    else
+      mock_mode=static
+    fi
+  fi
+  extra=
+  if [ "$probe" = "1" ]; then
+    printf 'route-agent: model probes perform provider requests and may consume quota; using configured profile %s\n' \
+      "$auth_profile" >&2
+    extra=--probe-models
+  fi
+  run_setup_helper --doctor "$config" "$auth_profile" "$mock_mode" "$extra"
+}
+
+run_command() {
+  project=
+  config="$root/config/lab.local.json"
+  auth_profile=
+  mode=routed
+  resume=
+  prompt=
+  prompt_set=0
+  options=1
+  while [ "$#" -gt 0 ]; do
+    if [ "$options" = "1" ]; then
+      case "$1" in
+        --project)
+          [ "$#" -ge 2 ] || usage
+          project=$2
+          shift 2
+          continue
+          ;;
+        --config)
+          [ "$#" -ge 2 ] || usage
+          config=$2
+          shift 2
+          continue
+          ;;
+        --auth-profile)
+          [ "$#" -ge 2 ] || usage
+          auth_profile=$2
+          shift 2
+          continue
+          ;;
+        --mode)
+          [ "$#" -ge 2 ] || usage
+          mode=$2
+          shift 2
+          continue
+          ;;
+        --resume)
+          [ "$#" -ge 2 ] || usage
+          resume=$2
+          shift 2
+          continue
+          ;;
+        --)
+          options=0
+          shift
+          continue
+          ;;
+        -*)
+          usage
+          ;;
+      esac
+    fi
+    [ "$prompt_set" = "0" ] || fail "prompt must be supplied as one shell argument"
+    prompt=$1
+    prompt_set=1
+    options=0
+    shift
+  done
+
+  [ -n "$project" ] || fail "run requires --project PATH"
+  [ "$mode" = "weak-only" ] || [ "$mode" = "strong-only" ] || [ "$mode" = "routed" ] ||
+    fail "mode must be weak-only, strong-only, or routed"
+  project=$(canonical_directory "$project")
+  config=$(canonical_file "$config")
+  agent_image=$(image_for agent)
+  [ -n "$auth_profile" ] || auth_profile=$(config_profile_from_file "$config")
+  validate_profile "$auth_profile"
+  mock_config=$(canonical_file "$root/config/lab.mock.json")
+  use_mock=0
+  [ "$config" != "$mock_config" ] || use_mock=1
+  if [ "${LAB_PHASE03_TEST:-0}" != "1" ] && [ "${LAB_PHASE05_TEST:-0}" != "1" ] &&
+    [ "${LAB_PHASE06_TEST:-0}" != "1" ]; then
+    [ -t 0 ] && [ -t 1 ] ||
+      fail "run requires an interactive terminal; use the evaluation command for non-interactive work"
+  fi
+  run_project "$project" "$auth_profile" "$config" "$mode" "$resume" "$prompt_set" "$prompt" "$use_mock"
+}
+
+require_docker
+command=${1:-}
+[ "$#" -gt 0 ] && shift || true
+case "$command" in
+  build)
+    [ "$#" -eq 0 ] || usage
+    compose build dev agent evaluator mock
+    ;;
+  dev)
+    [ "${1:-}" = "--" ] || usage
+    shift
+    [ "$#" -gt 0 ] || usage
+    if [ -t 0 ] && [ -t 1 ]; then
+      compose run --rm dev "$@"
+    else
+      compose run --rm -T dev "$@"
+    fi
+    ;;
+  auth)
+    auth_command "$@"
+    ;;
+  models)
+    models_command "$@"
+    ;;
+  config)
+    config_check_command "$@"
+    ;;
+  doctor)
+    doctor_command "$@"
+    ;;
+  run)
+    run_command "$@"
+    ;;
+  eval)
+    eval_command "$@"
+    ;;
+  report)
+    report_command "$@"
+    ;;
+  analyze)
+    analyze_command "$@"
+    ;;
+  *)
+    usage
+    ;;
+esac
